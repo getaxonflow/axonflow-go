@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/getaxonflow/axonflow-go"
@@ -44,9 +45,9 @@ func main() {
 	})
 
 	// Generate a multi-step plan
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Step 1: Generate Multi-Agent Plan")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	planGoal := "Plan a 3-day business trip to Paris with meetings at La Défense, " +
 		"moderate budget for accommodation, and include dinner recommendations"
@@ -68,7 +69,7 @@ func main() {
 
 	// Display plan steps
 	fmt.Println("Plan Steps:")
-	fmt.Println("-" * 60)
+	fmt.Println(strings.Repeat("-", 60))
 	for i, step := range plan.Steps {
 		fmt.Printf("\n%d. %s\n", i+1, step.Name)
 		fmt.Printf("   Type: %s\n", step.Type)
@@ -87,9 +88,9 @@ func main() {
 	}
 
 	// Execute the plan
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Step 2: Execute Plan")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	fmt.Println("Executing plan...")
 	startTime := time.Now()
@@ -108,9 +109,9 @@ func main() {
 
 	if execResp.Status == "completed" {
 		fmt.Println("\nPlan Result:")
-		fmt.Println("="*60)
+		fmt.Println(strings.Repeat("=", 60))
 		fmt.Println(execResp.Result)
-		fmt.Println("="*60)
+		fmt.Println(strings.Repeat("=", 60))
 
 		// Display step results
 		if len(execResp.StepResults) > 0 {
@@ -135,9 +136,9 @@ func main() {
 	}
 
 	// Check plan status (demonstrates status polling for long-running plans)
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Step 3: Verify Plan Status")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	status, err := client.GetPlanStatus(plan.PlanID)
 	if err != nil {
@@ -153,9 +154,9 @@ func main() {
 	}
 
 	// Example 2: Complex parallel plan
-	fmt.Println("\n\n" + "="*60)
+	fmt.Println("\n\n" + strings.Repeat("=", 60))
 	fmt.Println("Example 2: Complex Parallel Plan")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	complexGoal := "Research and compare cloud providers (AWS, Azure, GCP) for " +
 		"a new microservices architecture, including pricing, compliance, and performance data"

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/getaxonflow/axonflow-go"
 )
@@ -23,9 +24,9 @@ func main() {
 	client := axonflow.NewClientSimple(agentURL, clientID, clientSecret)
 
 	// List available connectors in the marketplace
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Step 1: List Available Connectors")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	connectors, err := client.ListConnectors()
 	if err != nil {
@@ -45,9 +46,9 @@ func main() {
 	}
 
 	// Install a connector (example: Amadeus Travel API)
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 	fmt.Println("Step 2: Install Amadeus Travel Connector")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	// Check if Amadeus credentials are available
 	amadeusKey := os.Getenv("AMADEUS_API_KEY")
@@ -83,9 +84,9 @@ func main() {
 	}
 
 	// Query an installed connector
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Step 3: Query Connector")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	// Example 1: Query Amadeus for flight data
 	if amadeusKey != "" {
@@ -133,9 +134,9 @@ func main() {
 	}
 
 	// Example 3: List connectors again to see installed status
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Step 4: Verify Installed Connectors")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	connectors, err = client.ListConnectors()
 	if err != nil {

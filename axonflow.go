@@ -1,3 +1,6 @@
+// Package axonflow provides an enterprise-grade Go SDK for the AxonFlow AI governance platform.
+// It enables invisible AI governance with production-ready features including retry logic,
+// caching, fail-open strategy, and debug mode.
 package axonflow
 
 import (
@@ -10,6 +13,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,8 +32,8 @@ type AxonFlowConfig struct {
 
 // RetryConfig configures retry behavior
 type RetryConfig struct {
-	Enabled     bool          // Enable retry logic (default: true)
-	MaxAttempts int           // Maximum retry attempts (default: 3)
+	Enabled      bool          // Enable retry logic (default: true)
+	MaxAttempts  int           // Maximum retry attempts (default: 3)
 	InitialDelay time.Duration // Initial delay between retries (default: 1s)
 }
 
@@ -57,22 +61,23 @@ type ClientRequest struct {
 
 // ClientResponse represents response from AxonFlow Agent
 type ClientResponse struct {
-	Success      bool                   `json:"success"`
-	Data         interface{}            `json:"data,omitempty"`
-	Result       string                 `json:"result,omitempty"` // For multi-agent planning
-	PlanID       string                 `json:"plan_id,omitempty"` // For multi-agent planning
-	Metadata     map[string]interface{} `json:"metadata,omitempty"`
-	Error        string                 `json:"error,omitempty"`
-	Blocked      bool                   `json:"blocked"`
-	BlockReason  string                 `json:"block_reason,omitempty"`
-	PolicyInfo   *PolicyEvaluationInfo  `json:"policy_info,omitempty"`
+	Success     bool                   `json:"success"`
+	Data        interface{}            `json:"data,omitempty"`
+	Result      string                 `json:"result,omitempty"`     // For multi-agent planning
+	PlanID      string                 `json:"plan_id,omitempty"`    // For multi-agent planning
+	RequestID   string                 `json:"request_id,omitempty"` // Unique request identifier
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Error       string                 `json:"error,omitempty"`
+	Blocked     bool                   `json:"blocked"`
+	BlockReason string                 `json:"block_reason,omitempty"`
+	PolicyInfo  *PolicyEvaluationInfo  `json:"policy_info,omitempty"`
 }
 
 // PolicyEvaluationInfo contains policy evaluation metadata
 type PolicyEvaluationInfo struct {
 	PoliciesEvaluated []string `json:"policies_evaluated"`
 	StaticChecks      []string `json:"static_checks"`
-	ProcessingTime    string   `json:"processing_time"`
+	ProcessingTime    int      `json:"processing_time"` // Processing time in milliseconds
 	TenantID          string   `json:"tenant_id"`
 }
 
@@ -89,6 +94,7 @@ type ConnectorMetadata struct {
 	Capabilities []string               `json:"capabilities"`
 	ConfigSchema map[string]interface{} `json:"config_schema"`
 	Installed    bool                   `json:"installed"`
+	InstanceName string                 `json:"instance_name,omitempty"` // Name of installed instance
 	Healthy      bool                   `json:"healthy,omitempty"`
 }
 
@@ -111,33 +117,49 @@ type ConnectorResponse struct {
 
 // PlanResponse represents a multi-agent plan generation response
 type PlanResponse struct {
-	PlanID      string                 `json:"plan_id"`
-	Steps       []PlanStep             `json:"steps"`
-	Domain      string                 `json:"domain"`
-	Complexity  int                    `json:"complexity"`
-	Parallel    bool                   `json:"parallel"`
-	Metadata    map[string]interface{} `json:"metadata"`
+	PlanID            string                 `json:"plan_id"`
+	Steps             []PlanStep             `json:"steps"`
+	Domain            string                 `json:"domain"`
+	Complexity        int                    `json:"complexity"`         // Complexity score (1-10)
+	Parallel          bool                   `json:"parallel"`           // Whether steps can run in parallel
+	EstimatedDuration string                 `json:"estimated_duration"` // Estimated execution time
+	Metadata          map[string]interface{} `json:"metadata"`
 }
 
 // PlanStep represents a single step in a multi-agent plan
 type PlanStep struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Description string                 `json:"description"`
-	DependsOn   []string               `json:"depends_on"`
-	Agent       string                 `json:"agent"`
-	Parameters  map[string]interface{} `json:"parameters"`
+	ID            string                 `json:"id"`
+	Name          string                 `json:"name"`
+	Type          string                 `json:"type"`
+	Description   string                 `json:"description"`
+	Dependencies  []string               `json:"dependencies"` // IDs of steps this depends on
+	Agent         string                 `json:"agent"`        // Agent responsible for execution
+	Parameters    map[string]interface{} `json:"parameters"`
+	EstimatedTime string                 `json:"estimated_time"` // Estimated execution time for this step
 }
 
 // PlanExecutionResponse represents the result of plan execution
 type PlanExecutionResponse struct {
-	PlanID       string                 `json:"plan_id"`
-	Status       string                 `json:"status"` // "running", "completed", "failed"
-	Result       string                 `json:"result,omitempty"`
-	StepResults  map[string]interface{} `json:"step_results,omitempty"`
-	Error        string                 `json:"error,omitempty"`
-	Duration     string                 `json:"duration,omitempty"`
+	PlanID                 string       `json:"plan_id"`
+	Status                 string       `json:"status"` // "running", "completed", "failed", "partial"
+	Result                 string       `json:"result,omitempty"`
+	StepResults            []StepResult `json:"step_results,omitempty"`
+	Error                  string       `json:"error,omitempty"`
+	Duration               string       `json:"duration,omitempty"`
+	CompletedSteps         int          `json:"completed_steps"`                    // Number of completed steps
+	TotalSteps             int          `json:"total_steps"`                        // Total number of steps
+	CurrentStep            string       `json:"current_step,omitempty"`             // Currently executing step
+	EstimatedTimeRemaining string       `json:"estimated_time_remaining,omitempty"` // For in-progress plans
+}
+
+// StepResult represents the result of a single plan step execution
+type StepResult struct {
+	StepID   string      `json:"step_id"`
+	StepName string      `json:"step_name"`
+	Status   string      `json:"status"` // "pending", "running", "completed", "failed"
+	Result   interface{} `json:"result,omitempty"`
+	Error    string      `json:"error,omitempty"`
+	Duration string      `json:"duration,omitempty"`
 }
 
 // Cache entry
@@ -435,10 +457,10 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 // isAxonFlowError checks if an error is from AxonFlow (vs the AI provider)
 func (c *AxonFlowClient) isAxonFlowError(err error) bool {
 	errMsg := err.Error()
-	return contains(errMsg, "AxonFlow") ||
-		contains(errMsg, "governance") ||
-		contains(errMsg, "request failed") ||
-		contains(errMsg, "connection refused")
+	return strings.Contains(errMsg, "AxonFlow") ||
+		strings.Contains(errMsg, "governance") ||
+		strings.Contains(errMsg, "request failed") ||
+		strings.Contains(errMsg, "connection refused")
 }
 
 // HealthCheck checks if AxonFlow Agent is healthy
@@ -600,8 +622,38 @@ func (c *AxonFlowClient) ExecutePlan(planID string) (*PlanExecutionResponse, err
 		if duration, ok := resp.Metadata["duration"].(string); ok {
 			execResp.Duration = duration
 		}
-		if stepResults, ok := resp.Metadata["step_results"].(map[string]interface{}); ok {
-			execResp.StepResults = stepResults
+		if stepResults, ok := resp.Metadata["step_results"].([]interface{}); ok {
+			// Convert to StepResult slice
+			for _, sr := range stepResults {
+				if srMap, ok := sr.(map[string]interface{}); ok {
+					stepResult := StepResult{}
+					if id, ok := srMap["step_id"].(string); ok {
+						stepResult.StepID = id
+					}
+					if name, ok := srMap["step_name"].(string); ok {
+						stepResult.StepName = name
+					}
+					if status, ok := srMap["status"].(string); ok {
+						stepResult.Status = status
+					}
+					if result, ok := srMap["result"]; ok {
+						stepResult.Result = result
+					}
+					if errStr, ok := srMap["error"].(string); ok {
+						stepResult.Error = errStr
+					}
+					if dur, ok := srMap["duration"].(string); ok {
+						stepResult.Duration = dur
+					}
+					execResp.StepResults = append(execResp.StepResults, stepResult)
+				}
+			}
+		}
+		if completed, ok := resp.Metadata["completed_steps"].(float64); ok {
+			execResp.CompletedSteps = int(completed)
+		}
+		if total, ok := resp.Metadata["total_steps"].(float64); ok {
+			execResp.TotalSteps = int(total)
 		}
 	}
 
@@ -643,18 +695,4 @@ func min(a, b int) int {
 		return a
 	}
 	return b
-}
-
-func contains(s, substr string) bool {
-	return len(s) > 0 && len(substr) > 0 && s != "" && substr != "" &&
-		(s == substr || (len(s) > len(substr) && findSubstring(s, substr)))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

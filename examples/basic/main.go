@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/getaxonflow/axonflow-go"
 )
@@ -67,13 +68,15 @@ func main() {
 	// Display governance metadata
 	fmt.Println("\nGovernance Metadata:")
 	fmt.Printf("  Request ID: %s\n", resp.RequestID)
-	fmt.Printf("  Policies Evaluated: %v\n", resp.PolicyInfo.PoliciesEvaluated)
-	fmt.Printf("  Processing Time: %dms\n", resp.Metadata.ProcessingTime)
+	if resp.PolicyInfo != nil {
+		fmt.Printf("  Policies Evaluated: %v\n", resp.PolicyInfo.PoliciesEvaluated)
+		fmt.Printf("  Processing Time: %dms\n", resp.PolicyInfo.ProcessingTime)
+	}
 
 	// Test with sensitive data (should be redacted)
-	fmt.Println("\n" + "="*60)
+	fmt.Println("\n" + strings.Repeat("=", 60))
 	fmt.Println("Testing PII detection and redaction...")
-	fmt.Println("="*60)
+	fmt.Println(strings.Repeat("=", 60))
 
 	resp2, err := client.ExecuteQuery(
 		"demo-user-token",
