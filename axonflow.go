@@ -23,6 +23,7 @@ type AxonFlowConfig struct {
 	AgentURL     string        // Required: AxonFlow Agent URL
 	ClientID     string        // Required: Client ID for authentication
 	ClientSecret string        // Required: Client secret for authentication
+	LicenseKey   string        // Required: AxonFlow license key for agent authentication
 	Mode         string        // "production" | "sandbox" (default: "production")
 	Debug        bool          // Enable debug logging (default: false)
 	Timeout      time.Duration // Request timeout (default: 60s)
@@ -416,6 +417,9 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Sending request - Type: %s, Query: %s", req.RequestType, req.Query[:min(50, len(req.Query))])
@@ -521,6 +525,9 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
