@@ -461,6 +461,44 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
+	// Check for nested errors in the Data field
+	// When orchestrator fails, agent wraps error as: {"success":true, "data":{"success":false, "error":"..."}}
+	if clientResp.Data != nil {
+		if dataMap, ok := clientResp.Data.(map[string]interface{}); ok {
+			// Check if data contains nested success field
+			if dataSuccess, hasSuccess := dataMap["success"].(bool); hasSuccess && !dataSuccess {
+				// Orchestrator execution failed - extract error message
+				if errorMsg, hasError := dataMap["error"].(string); hasError {
+					log.Printf("[SDK-DEBUG] Detected orchestrator failure in data.error: %s", errorMsg)
+					// Surface the error by setting the Error field and marking success as false
+					clientResp.Error = errorMsg
+					clientResp.Success = false
+				}
+			}
+			// Also check if data.result exists and use it if Result is empty
+			if clientResp.Result == "" {
+				if dataResult, hasResult := dataMap["result"].(string); hasResult && dataResult != "" {
+					log.Printf("[SDK-DEBUG] Using data.result field (length: %d)", len(dataResult))
+					clientResp.Result = dataResult
+				}
+			}
+			// Check if data.plan_id exists and use it if PlanID is empty
+			if clientResp.PlanID == "" {
+				if dataPlanID, hasPlanID := dataMap["plan_id"].(string); hasPlanID && dataPlanID != "" {
+					log.Printf("[SDK-DEBUG] Using data.plan_id field: %s", dataPlanID)
+					clientResp.PlanID = dataPlanID
+				}
+			}
+			// Check if data.metadata exists and use it if Metadata is empty
+			if clientResp.Metadata == nil {
+				if dataMetadata, hasMetadata := dataMap["metadata"].(map[string]interface{}); hasMetadata {
+					log.Printf("[SDK-DEBUG] Using data.metadata field")
+					clientResp.Metadata = dataMetadata
+				}
+			}
+		}
+	}
+
 	// [DEBUG] Log unmarshaled response details
 	log.Printf("[SDK-DEBUG] Unmarshaled - Success: %v, Result length: %d, PlanID: %s",
 		clientResp.Success, len(clientResp.Result), clientResp.PlanID)
@@ -474,6 +512,11 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 		log.Printf("[SDK-DEBUG] Result is empty!")
 	}
 	log.Printf("[SDK-DEBUG] Metadata keys: %v", getMetadataKeys(clientResp.Metadata))
+
+	// If we detected an error in the data field, log it prominently
+	if clientResp.Error != "" {
+		log.Printf("[SDK-DEBUG] Error field set: %s", clientResp.Error)
+	}
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Response received - Success: %v, Duration: %v", clientResp.Success, duration)
