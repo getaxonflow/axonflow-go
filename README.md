@@ -14,7 +14,7 @@ go get github.com/getaxonflow/axonflow-go
 
 ## Quick Start
 
-### Basic Usage
+### Basic Usage (License-Based Auth)
 
 ```go
 package main
@@ -22,17 +22,17 @@ package main
 import (
     "fmt"
     "log"
+    "os"
 
     "github.com/getaxonflow/axonflow-go"
 )
 
 func main() {
-    // Simple initialization
-    client := axonflow.NewClientSimple(
-        "https://staging-eu.getaxonflow.com",
-        "your-client-id",
-        "your-client-secret",
-    )
+    // Simple initialization with license key
+    client := axonflow.NewClient(axonflow.AxonFlowConfig{
+        AgentURL:   "https://staging-eu.getaxonflow.com",
+        LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+    })
 
     // Execute a governed query
     resp, err := client.ExecuteQuery(
@@ -60,17 +60,17 @@ func main() {
 ```go
 import (
     "time"
+    "os"
     "github.com/getaxonflow/axonflow-go"
 )
 
 // Full configuration with all features
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:     "https://staging-eu.getaxonflow.com",
-    ClientID:     "your-client-id",
-    ClientSecret: "your-client-secret",
-    Mode:         "production",  // or "sandbox"
-    Debug:        true,           // Enable debug logging
-    Timeout:      60 * time.Second,
+    AgentURL:   "https://staging-eu.getaxonflow.com",
+    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+    Mode:       "production",  // or "sandbox"
+    Debug:      true,          // Enable debug logging
+    Timeout:    60 * time.Second,
 
     // Retry configuration (exponential backoff)
     Retry: axonflow.RetryConfig{
@@ -85,6 +85,19 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
         TTL:     60 * time.Second,
     },
 })
+```
+
+### Legacy Authentication (Deprecated)
+
+> **⚠️ Deprecated:** `ClientID` and `ClientSecret` authentication is deprecated. Please migrate to license-based authentication using `LicenseKey`.
+
+```go
+// Legacy method (still supported for backward compatibility)
+client := axonflow.NewClientSimple(
+    "https://staging-eu.getaxonflow.com",
+    "your-client-id",
+    "your-client-secret",
+)
 ```
 
 ### Sandbox Mode (Testing)
@@ -358,11 +371,10 @@ fmt.Printf("Result: %v\n", resp.Data)
    ```go
    import "os"
 
-   client := axonflow.NewClientSimple(
-       os.Getenv("AXONFLOW_AGENT_URL"),
-       os.Getenv("AXONFLOW_CLIENT_ID"),
-       os.Getenv("AXONFLOW_CLIENT_SECRET"),
-   )
+   client := axonflow.NewClient(axonflow.AxonFlowConfig{
+       AgentURL:   os.Getenv("AXONFLOW_AGENT_URL"),
+       LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+   })
    ```
 
 2. **Fail-Open in Production**: Use `Mode: "production"` to fail-open if AxonFlow is unavailable
@@ -375,6 +387,8 @@ fmt.Printf("Result: %v\n", resp.Data)
 
 6. **Health Checks**: Monitor AxonFlow availability with periodic health checks
 
+7. **Secure Storage**: Store license keys in environment variables or secrets management systems (AWS Secrets Manager, HashiCorp Vault, etc.)
+
 ## Configuration Reference
 
 ### AxonFlowConfig
@@ -382,8 +396,9 @@ fmt.Printf("Result: %v\n", resp.Data)
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `AgentURL` | `string` | Required | AxonFlow Agent endpoint URL |
-| `ClientID` | `string` | Required | Client ID for authentication |
-| `ClientSecret` | `string` | Required | Client secret for authentication |
+| `LicenseKey` | `string` | **Recommended** | License key for authentication |
+| `ClientID` | `string` | Deprecated | ⚠️ Legacy: Client ID (use LicenseKey instead) |
+| `ClientSecret` | `string` | Deprecated | ⚠️ Legacy: Client secret (use LicenseKey instead) |
 | `Mode` | `string` | `"production"` | `"production"` or `"sandbox"` |
 | `Debug` | `bool` | `false` | Enable debug logging |
 | `Timeout` | `time.Duration` | `60s` | Request timeout |
@@ -392,6 +407,34 @@ fmt.Printf("Result: %v\n", resp.Data)
 | `Retry.InitialDelay` | `time.Duration` | `1s` | Initial retry delay (exponential backoff) |
 | `Cache.Enabled` | `bool` | `true` | Enable caching |
 | `Cache.TTL` | `time.Duration` | `60s` | Cache time-to-live |
+
+## Migration Guide
+
+### Migrating from ClientID/ClientSecret to License Key
+
+If you're currently using `ClientID` and `ClientSecret`, migrate to license-based authentication:
+
+**Before:**
+```go
+client := axonflow.NewClient(axonflow.AxonFlowConfig{
+    AgentURL:     "https://staging-eu.getaxonflow.com",
+    ClientID:     os.Getenv("AXONFLOW_CLIENT_ID"),
+    ClientSecret: os.Getenv("AXONFLOW_CLIENT_SECRET"),
+})
+```
+
+**After:**
+```go
+client := axonflow.NewClient(axonflow.AxonFlowConfig{
+    AgentURL:   "https://staging-eu.getaxonflow.com",
+    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+})
+```
+
+**How to get a license key:**
+1. Contact AxonFlow support at [dev@getaxonflow.com](mailto:dev@getaxonflow.com)
+2. License keys are provided as part of your AxonFlow subscription
+3. Store keys securely in environment variables or secrets management systems
 
 ## Examples
 

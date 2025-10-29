@@ -318,3 +318,69 @@ func TestConfigurationEdgeCases(t *testing.T) {
 		t.Errorf("Expected default cache TTL, got %v", client.config.Cache.TTL)
 	}
 }
+
+func TestLicenseKeyAuth(t *testing.T) {
+	// Test that license key is properly configured
+	config := AxonFlowConfig{
+		AgentURL:   "https://test.example.com",
+		LicenseKey: "test-license-key-abc123",
+	}
+
+	client := NewClient(config)
+
+	if client == nil {
+		t.Fatal("Expected client to be created, got nil")
+	}
+
+	if client.config.LicenseKey != "test-license-key-abc123" {
+		t.Errorf("Expected LicenseKey 'test-license-key-abc123', got '%s'", client.config.LicenseKey)
+	}
+}
+
+func TestClientIDAuthBackwardCompatibility(t *testing.T) {
+	// Test backward compatibility with ClientID/ClientSecret
+	config := AxonFlowConfig{
+		AgentURL:     "https://test.example.com",
+		ClientID:     "legacy-client-id",
+		ClientSecret: "legacy-secret",
+	}
+
+	client := NewClient(config)
+
+	if client == nil {
+		t.Fatal("Expected client to be created, got nil")
+	}
+
+	if client.config.ClientID != "legacy-client-id" {
+		t.Errorf("Expected ClientID 'legacy-client-id', got '%s'", client.config.ClientID)
+	}
+
+	if client.config.ClientSecret != "legacy-secret" {
+		t.Errorf("Expected ClientSecret 'legacy-secret', got '%s'", client.config.ClientSecret)
+	}
+}
+
+func TestLicenseKeyPrefersOverClientID(t *testing.T) {
+	// Test that license key is used when both are provided
+	config := AxonFlowConfig{
+		AgentURL:     "https://test.example.com",
+		ClientID:     "legacy-client-id",
+		ClientSecret: "legacy-secret",
+		LicenseKey:   "new-license-key",
+	}
+
+	client := NewClient(config)
+
+	if client == nil {
+		t.Fatal("Expected client to be created, got nil")
+	}
+
+	// Both should be present in config
+	if client.config.LicenseKey != "new-license-key" {
+		t.Errorf("Expected LicenseKey 'new-license-key', got '%s'", client.config.LicenseKey)
+	}
+
+	if client.config.ClientID != "legacy-client-id" {
+		t.Errorf("Expected ClientID 'legacy-client-id', got '%s'", client.config.ClientID)
+	}
+}
