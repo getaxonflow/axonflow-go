@@ -78,7 +78,7 @@ type ClientResponse struct {
 type PolicyEvaluationInfo struct {
 	PoliciesEvaluated []string `json:"policies_evaluated"`
 	StaticChecks      []string `json:"static_checks"`
-	ProcessingTime    int      `json:"processing_time"` // Processing time in milliseconds
+	ProcessingTime    string   `json:"processing_time"` // Processing time as duration string (e.g., "17.48s")
 	TenantID          string   `json:"tenant_id"`
 }
 
