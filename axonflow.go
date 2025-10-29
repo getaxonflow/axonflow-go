@@ -439,6 +439,14 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
+	// [DEBUG] Log raw response body before unmarshaling
+	log.Printf("[SDK-DEBUG] Raw response body size: %d bytes", len(body))
+	if len(body) > 0 && len(body) <= 500 {
+		log.Printf("[SDK-DEBUG] Raw response body (full): %s", string(body))
+	} else if len(body) > 500 {
+		log.Printf("[SDK-DEBUG] Raw response body (first 500 chars): %s...", string(body[:500]))
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, &httpError{
 			statusCode: resp.StatusCode,
@@ -448,8 +456,24 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 
 	var clientResp ClientResponse
 	if err := json.Unmarshal(body, &clientResp); err != nil {
+		log.Printf("[SDK-DEBUG] Unmarshal error: %v", err)
+		log.Printf("[SDK-DEBUG] Body that failed to unmarshal: %s", string(body))
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
+
+	// [DEBUG] Log unmarshaled response details
+	log.Printf("[SDK-DEBUG] Unmarshaled - Success: %v, Result length: %d, PlanID: %s",
+		clientResp.Success, len(clientResp.Result), clientResp.PlanID)
+	if len(clientResp.Result) > 0 {
+		if len(clientResp.Result) <= 100 {
+			log.Printf("[SDK-DEBUG] Result (full): %s", clientResp.Result)
+		} else {
+			log.Printf("[SDK-DEBUG] Result (first 100 chars): %s...", clientResp.Result[:100])
+		}
+	} else {
+		log.Printf("[SDK-DEBUG] Result is empty!")
+	}
+	log.Printf("[SDK-DEBUG] Metadata keys: %v", getMetadataKeys(clientResp.Metadata))
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Response received - Success: %v, Duration: %v", clientResp.Success, duration)
@@ -484,6 +508,18 @@ func (c *AxonFlowClient) HealthCheck() error {
 	}
 
 	return nil
+}
+
+// getMetadataKeys returns the keys from a metadata map for debugging
+func getMetadataKeys(metadata map[string]interface{}) []string {
+	if metadata == nil {
+		return []string{}
+	}
+	keys := make([]string, 0, len(metadata))
+	for k := range metadata {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 // ListConnectors returns all available MCP connectors from the marketplace
