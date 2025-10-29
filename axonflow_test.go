@@ -179,7 +179,7 @@ func TestClientResponseStruct(t *testing.T) {
 		PolicyInfo: &PolicyEvaluationInfo{
 			PoliciesEvaluated: []string{"policy1", "policy2"},
 			StaticChecks:      []string{"check1"},
-			ProcessingTime:    150,
+			ProcessingTime:    "150ms",
 			TenantID:          "tenant-1",
 		},
 	}
@@ -188,8 +188,8 @@ func TestClientResponseStruct(t *testing.T) {
 		t.Error("Expected Success to be true")
 	}
 
-	if resp.PolicyInfo.ProcessingTime != 150 {
-		t.Errorf("Expected ProcessingTime 150, got %d", resp.PolicyInfo.ProcessingTime)
+	if resp.PolicyInfo.ProcessingTime != "150ms" {
+		t.Errorf("Expected ProcessingTime 150ms, got %s", resp.PolicyInfo.ProcessingTime)
 	}
 
 	if len(resp.PolicyInfo.PoliciesEvaluated) != 2 {
