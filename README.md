@@ -248,6 +248,109 @@ if resp.Success {
 }
 ```
 
+### Production Connectors (November 2025)
+
+AxonFlow now supports **7 production-ready connectors**:
+
+#### Salesforce CRM Connector
+
+Query Salesforce data using SOQL:
+
+```go
+// Query Salesforce contacts
+resp, err := client.QueryConnector(
+    "salesforce-crm",
+    "Find all contacts for account Acme Corp",
+    map[string]interface{}{
+        "soql": "SELECT Id, Name, Email, Phone FROM Contact WHERE AccountId = '001xx000003DHP0'",
+    },
+)
+
+if err != nil {
+    log.Fatalf("Salesforce query failed: %v", err)
+}
+
+fmt.Printf("Found %d contacts\n", len(resp.Data.([]interface{})))
+```
+
+**Authentication:** OAuth 2.0 password grant (configured in AxonFlow dashboard)
+
+#### Snowflake Data Warehouse Connector
+
+Execute analytics queries on Snowflake:
+
+```go
+// Query Snowflake for sales analytics
+resp, err := client.QueryConnector(
+    "snowflake-warehouse",
+    "Get monthly revenue for last 12 months",
+    map[string]interface{}{
+        "sql": `SELECT DATE_TRUNC('month', order_date) as month,
+                COUNT(*) as orders,
+                SUM(amount) as revenue
+                FROM orders
+                WHERE order_date >= DATEADD(month, -12, CURRENT_DATE())
+                GROUP BY month
+                ORDER BY month`,
+    },
+)
+
+if err != nil {
+    log.Fatalf("Snowflake query failed: %v", err)
+}
+
+fmt.Printf("Revenue data: %v\n", resp.Data)
+```
+
+**Authentication:** Key-pair JWT authentication (configured in AxonFlow dashboard)
+
+#### Slack Connector
+
+Send notifications and alerts to Slack channels:
+
+```go
+// Send Slack notification
+resp, err := client.QueryConnector(
+    "slack-workspace",
+    "Send deployment notification to #engineering channel",
+    map[string]interface{}{
+        "channel": "#engineering",
+        "text":    "🚀 Deployment complete! All systems operational.",
+        "blocks": []map[string]interface{}{
+            {
+                "type": "section",
+                "text": map[string]string{
+                    "type": "mrkdwn",
+                    "text": "*Deployment Status*\n✅ All systems operational",
+                },
+            },
+        },
+    },
+)
+
+if err != nil {
+    log.Fatalf("Slack notification failed: %v", err)
+}
+
+fmt.Printf("Message sent: %v\n", resp.Success)
+```
+
+**Authentication:** OAuth 2.0 bot token (configured in AxonFlow dashboard)
+
+#### Available Connectors
+
+| Connector | Type | Use Case |
+|-----------|------|----------|
+| PostgreSQL | Database | Relational data access |
+| Redis | Cache | Distributed rate limiting |
+| Slack | Communication | Team notifications |
+| Salesforce | CRM | Customer data, SOQL queries |
+| Snowflake | Data Warehouse | Analytics, reporting |
+| Amadeus GDS | Travel | Flight/hotel booking |
+| Cassandra | NoSQL | Distributed database |
+
+For complete connector documentation, see [https://docs.getaxonflow.com/mcp](https://docs.getaxonflow.com/mcp)
+
 ## Multi-Agent Planning (MAP)
 
 Generate and execute complex multi-step plans using AI agent orchestration:
