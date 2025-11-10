@@ -228,6 +228,7 @@ fmt.Println("Connector installed successfully!")
 ```go
 // Query the Amadeus connector for flight information
 resp, err := client.QueryConnector(
+    "user-session-token",  // User token for authentication and audit trail
     "amadeus-prod",
     "Find flights from Paris to Amsterdam on Dec 15",
     map[string]interface{}{
@@ -259,6 +260,7 @@ Query Salesforce data using SOQL:
 ```go
 // Query Salesforce contacts
 resp, err := client.QueryConnector(
+    "user-session-token",  // User token for authentication and audit trail
     "salesforce-crm",
     "Find all contacts for account Acme Corp",
     map[string]interface{}{
@@ -282,6 +284,7 @@ Execute analytics queries on Snowflake:
 ```go
 // Query Snowflake for sales analytics
 resp, err := client.QueryConnector(
+    "user-session-token",  // User token for authentication and audit trail
     "snowflake-warehouse",
     "Get monthly revenue for last 12 months",
     map[string]interface{}{
@@ -311,6 +314,7 @@ Send notifications and alerts to Slack channels:
 ```go
 // Send Slack notification
 resp, err := client.QueryConnector(
+    "user-session-token",  // User token for authentication and audit trail
     "slack-workspace",
     "Send deployment notification to #engineering channel",
     map[string]interface{}{

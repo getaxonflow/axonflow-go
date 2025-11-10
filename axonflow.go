@@ -627,13 +627,13 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 }
 
 // QueryConnector executes a query against an installed MCP connector
-func (c *AxonFlowClient) QueryConnector(connectorName, query string, params map[string]interface{}) (*ConnectorResponse, error) {
+func (c *AxonFlowClient) QueryConnector(userToken, connectorName, query string, params map[string]interface{}) (*ConnectorResponse, error) {
 	context := map[string]interface{}{
 		"connector": connectorName,
 		"params":    params,
 	}
 
-	resp, err := c.ExecuteQuery("", query, "mcp-query", context)
+	resp, err := c.ExecuteQuery(userToken, query, "mcp-query", context)
 	if err != nil {
 		return nil, err
 	}
