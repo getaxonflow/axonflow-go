@@ -70,7 +70,7 @@ func main() {
 	fmt.Printf("  Request ID: %s\n", resp.RequestID)
 	if resp.PolicyInfo != nil {
 		fmt.Printf("  Policies Evaluated: %v\n", resp.PolicyInfo.PoliciesEvaluated)
-		fmt.Printf("  Processing Time: %dms\n", resp.PolicyInfo.ProcessingTime)
+		fmt.Printf("  Processing Time: %s\n", resp.PolicyInfo.ProcessingTime)
 	}
 
 	// Test with sensitive data (should be redacted)
