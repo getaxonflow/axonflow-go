@@ -93,7 +93,7 @@ func main() {
 		fmt.Println("Querying Amadeus connector for flights...")
 
 		resp, err := client.QueryConnector(
-			"demo-user-token",  // User token for authentication and audit
+			"demo-user-token", // User token for authentication and audit
 			"amadeus-prod",
 			"Find flights from Paris to Amsterdam on 2025-12-15",
 			map[string]interface{}{
@@ -118,7 +118,7 @@ func main() {
 	fmt.Println("\nQuerying Redis connector...")
 
 	redisResp, err := client.QueryConnector(
-		"demo-user-token",  // User token for authentication and audit
+		"demo-user-token", // User token for authentication and audit
 		"redis-cache",
 		"Get cached user preferences for user-123",
 		map[string]interface{}{
