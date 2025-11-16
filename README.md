@@ -87,6 +87,60 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
 })
 ```
 
+### Self-Hosted Mode (No License Required)
+
+Connect to a self-hosted AxonFlow instance running via docker-compose:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/getaxonflow/axonflow-go"
+)
+
+func main() {
+    // Self-hosted (localhost) - no license key needed!
+    client := axonflow.NewClient(axonflow.AxonFlowConfig{
+        AgentURL: "http://localhost:8081",
+        // That's it - no authentication required for localhost
+    })
+
+    // Use normally - same features as production
+    resp, err := client.ExecuteQuery(
+        "user-token",
+        "Test with self-hosted AxonFlow",
+        "chat",
+        map[string]interface{}{},
+    )
+
+    if err != nil {
+        log.Fatalf("Query failed: %v", err)
+    }
+
+    fmt.Printf("Result: %s\n", resp.Data)
+}
+```
+
+**Self-hosted deployment:**
+```bash
+# Clone and start AxonFlow
+git clone https://github.com/getaxonflow/axonflow.git
+cd axonflow
+export OPENAI_API_KEY=sk-your-key-here
+docker-compose up
+
+# Go SDK connects to http://localhost:8081 - no license needed!
+```
+
+**Features:**
+- ✅ Full AxonFlow features without license
+- ✅ Perfect for local development and testing
+- ✅ Same API as production
+- ✅ Automatically detects localhost and skips authentication
+
 ### Legacy Authentication (Deprecated)
 
 > **⚠️ Deprecated:** `ClientID` and `ClientSecret` authentication is deprecated. Please migrate to license-based authentication using `LicenseKey`.
