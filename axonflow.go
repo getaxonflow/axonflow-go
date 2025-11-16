@@ -416,9 +416,14 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
 	}
 
 	if c.config.Debug {
@@ -603,9 +608,14 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
 	}
 
 	resp, err := c.httpClient.Do(httpReq)
