@@ -230,16 +230,9 @@ func (c *cache) cleanup() {
 
 // NewClient creates a new AxonFlow client with the given configuration
 func NewClient(config AxonFlowConfig) *AxonFlowClient {
-	// Check if running in self-hosted mode (localhost)
-	isLocalhost := strings.Contains(config.AgentURL, "localhost") || strings.Contains(config.AgentURL, "127.0.0.1")
-
 	// Set defaults
 	if config.Mode == "" {
-		if isLocalhost {
-			config.Mode = "sandbox"
-		} else {
-			config.Mode = "production"
-		}
+		config.Mode = "production"
 	}
 	if config.Timeout == 0 {
 		config.Timeout = 60 * time.Second
@@ -279,13 +272,7 @@ func NewClient(config AxonFlowConfig) *AxonFlowClient {
 	}
 
 	if config.Debug {
-		authMethod := "license-key"
-		if config.LicenseKey == "" && config.ClientSecret != "" {
-			authMethod = "client-secret"
-		} else if isLocalhost && config.LicenseKey == "" && config.ClientSecret == "" {
-			authMethod = "self-hosted (no auth)"
-		}
-		log.Printf("[AxonFlow] Client initialized - Mode: %s, Endpoint: %s, Auth: %s", config.Mode, config.AgentURL, authMethod)
+		log.Printf("[AxonFlow] Client initialized - Mode: %s, Endpoint: %s", config.Mode, config.AgentURL)
 	}
 
 	return client
@@ -429,16 +416,9 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
-		if c.config.ClientSecret != "" {
-			httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		}
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
+	httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
 	}
 
 	if c.config.Debug {
@@ -623,16 +603,9 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
-		if c.config.ClientSecret != "" {
-			httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		}
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
+	httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
 	}
 
 	resp, err := c.httpClient.Do(httpReq)
