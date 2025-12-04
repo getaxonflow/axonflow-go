@@ -833,6 +833,16 @@ func (c *AxonFlowClient) GetPlanStatus(planID string) (*PlanExecutionResponse, e
 // Gateway Mode Methods
 // ============================================================================
 
+// PreCheck is an alias for GetPolicyApprovedContext for simpler API.
+func (c *AxonFlowClient) PreCheck(
+	userToken string,
+	query string,
+	dataSources []string,
+	context map[string]interface{},
+) (*PolicyApprovalResult, error) {
+	return c.GetPolicyApprovedContext(userToken, query, dataSources, context)
+}
+
 // GetPolicyApprovedContext performs a policy pre-check before making a direct LLM call.
 //
 // Use Gateway Mode when you want to:
