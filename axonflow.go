@@ -953,6 +953,9 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 	if err != nil {
 		// Use a default expiration if parsing fails
 		expiresAt = time.Now().Add(5 * time.Minute)
+		if c.config.Debug {
+			log.Printf("[AxonFlow] Warning: Failed to parse expires_at '%s', using default 5 minute expiration", rawResp.ExpiresAt)
+		}
 	}
 
 	result := &PolicyApprovalResult{
@@ -966,7 +969,10 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 
 	// Parse rate limit info if present
 	if rawResp.RateLimit != nil {
-		resetAt, _ := time.Parse(time.RFC3339, rawResp.RateLimit.ResetAt)
+		resetAt, err := time.Parse(time.RFC3339, rawResp.RateLimit.ResetAt)
+		if err != nil && c.config.Debug {
+			log.Printf("[AxonFlow] Warning: Failed to parse rate_limit.reset_at '%s'", rawResp.RateLimit.ResetAt)
+		}
 		result.RateLimitInfo = &RateLimitInfo{
 			Limit:     rawResp.RateLimit.Limit,
 			Remaining: rawResp.RateLimit.Remaining,
