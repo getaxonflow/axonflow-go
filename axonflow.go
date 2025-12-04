@@ -139,6 +139,50 @@ type PlanStep struct {
 	EstimatedTime string                 `json:"estimated_time"` // Estimated execution time for this step
 }
 
+// ============================================================================
+// Gateway Mode Types
+// ============================================================================
+
+// TokenUsage represents token usage information for audit logging
+type TokenUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+// RateLimitInfo represents rate limit information returned from pre-check
+type RateLimitInfo struct {
+	Limit     int       `json:"limit"`
+	Remaining int       `json:"remaining"`
+	ResetAt   time.Time `json:"reset_at"`
+}
+
+// PolicyApprovalResult represents the result from policy pre-check in Gateway Mode
+type PolicyApprovalResult struct {
+	// ContextID is a unique ID for correlating pre-check with audit
+	ContextID string `json:"context_id"`
+	// Approved indicates whether the request was approved
+	Approved bool `json:"approved"`
+	// ApprovedData contains filtered/approved data to send to LLM
+	ApprovedData map[string]interface{} `json:"approved_data"`
+	// Policies lists the policies that were evaluated
+	Policies []string `json:"policies"`
+	// RateLimitInfo contains rate limit information (if applicable)
+	RateLimitInfo *RateLimitInfo `json:"rate_limit_info,omitempty"`
+	// ExpiresAt indicates when this approval expires
+	ExpiresAt time.Time `json:"expires_at"`
+	// BlockReason contains the reason for blocking (if not approved)
+	BlockReason string `json:"block_reason,omitempty"`
+}
+
+// AuditResult represents the result from audit logging in Gateway Mode
+type AuditResult struct {
+	// Success indicates whether the audit was logged successfully
+	Success bool `json:"success"`
+	// AuditID is a unique ID for reference
+	AuditID string `json:"audit_id"`
+}
+
 // PlanExecutionResponse represents the result of plan execution
 type PlanExecutionResponse struct {
 	PlanID                 string       `json:"plan_id"`
@@ -783,6 +827,258 @@ func (c *AxonFlowClient) GetPlanStatus(planID string) (*PlanExecutionResponse, e
 	}
 
 	return &status, nil
+}
+
+// ============================================================================
+// Gateway Mode Methods
+// ============================================================================
+
+// GetPolicyApprovedContext performs a policy pre-check before making a direct LLM call.
+//
+// Use Gateway Mode when you want to:
+//   - Make direct LLM calls (not through AxonFlow proxy)
+//   - Have full control over your LLM provider/model selection
+//   - Minimize latency by calling LLM directly
+//
+// Example:
+//
+//	ctx, err := client.GetPolicyApprovedContext(userToken, query, []string{"postgres"}, nil)
+//	if err != nil {
+//	    return err
+//	}
+//	if !ctx.Approved {
+//	    return fmt.Errorf("blocked: %s", ctx.BlockReason)
+//	}
+//
+//	// Make direct LLM call with ctx.ApprovedData
+//	resp, err := openai.CreateCompletion(...)
+//
+//	// Audit the call
+//	client.AuditLLMCall(ctx.ContextID, "summary", "openai", "gpt-4", tokenUsage, latencyMs, nil)
+func (c *AxonFlowClient) GetPolicyApprovedContext(
+	userToken string,
+	query string,
+	dataSources []string,
+	context map[string]interface{},
+) (*PolicyApprovalResult, error) {
+	if dataSources == nil {
+		dataSources = []string{}
+	}
+	if context == nil {
+		context = map[string]interface{}{}
+	}
+
+	reqBody := map[string]interface{}{
+		"user_token":   userToken,
+		"client_id":    c.config.ClientID,
+		"query":        query,
+		"data_sources": dataSources,
+		"context":      context,
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal pre-check request: %w", err)
+	}
+
+	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/policy/pre-check", bytes.NewReader(reqBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pre-check request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Gateway Mode: Pre-check for query: %s", query[:min(50, len(query))])
+	}
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("pre-check request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read pre-check response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(body),
+		}
+	}
+
+	// Parse response
+	var rawResp struct {
+		ContextID    string                 `json:"context_id"`
+		Approved     bool                   `json:"approved"`
+		ApprovedData map[string]interface{} `json:"approved_data"`
+		Policies     []string               `json:"policies"`
+		RateLimit    *struct {
+			Limit     int    `json:"limit"`
+			Remaining int    `json:"remaining"`
+			ResetAt   string `json:"reset_at"`
+		} `json:"rate_limit,omitempty"`
+		ExpiresAt   string `json:"expires_at"`
+		BlockReason string `json:"block_reason,omitempty"`
+	}
+
+	if err := json.Unmarshal(body, &rawResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal pre-check response: %w", err)
+	}
+
+	// Parse expiration time
+	expiresAt, err := time.Parse(time.RFC3339, rawResp.ExpiresAt)
+	if err != nil {
+		// Use a default expiration if parsing fails
+		expiresAt = time.Now().Add(5 * time.Minute)
+	}
+
+	result := &PolicyApprovalResult{
+		ContextID:    rawResp.ContextID,
+		Approved:     rawResp.Approved,
+		ApprovedData: rawResp.ApprovedData,
+		Policies:     rawResp.Policies,
+		ExpiresAt:    expiresAt,
+		BlockReason:  rawResp.BlockReason,
+	}
+
+	// Parse rate limit info if present
+	if rawResp.RateLimit != nil {
+		resetAt, _ := time.Parse(time.RFC3339, rawResp.RateLimit.ResetAt)
+		result.RateLimitInfo = &RateLimitInfo{
+			Limit:     rawResp.RateLimit.Limit,
+			Remaining: rawResp.RateLimit.Remaining,
+			ResetAt:   resetAt,
+		}
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Gateway Mode: Pre-check result - Approved: %v, ContextID: %s, Policies: %d",
+			result.Approved, result.ContextID, len(result.Policies))
+	}
+
+	return result, nil
+}
+
+// AuditLLMCall logs an audit trail after making a direct LLM call.
+//
+// This is required for compliance and monitoring when using Gateway Mode.
+// Call this after making your direct LLM call to ensure the audit trail is complete.
+//
+// Example:
+//
+//	result, err := client.AuditLLMCall(
+//	    ctx.ContextID,
+//	    "Generated report with 5 items",
+//	    "openai",
+//	    "gpt-4",
+//	    TokenUsage{PromptTokens: 100, CompletionTokens: 50, TotalTokens: 150},
+//	    250, // latency in ms
+//	    nil, // optional metadata
+//	)
+func (c *AxonFlowClient) AuditLLMCall(
+	contextID string,
+	responseSummary string,
+	provider string,
+	model string,
+	tokenUsage TokenUsage,
+	latencyMs int64,
+	metadata map[string]interface{},
+) (*AuditResult, error) {
+	if metadata == nil {
+		metadata = map[string]interface{}{}
+	}
+
+	reqBody := map[string]interface{}{
+		"context_id":       contextID,
+		"client_id":        c.config.ClientID,
+		"response_summary": responseSummary,
+		"provider":         provider,
+		"model":            model,
+		"token_usage": map[string]int{
+			"prompt_tokens":     tokenUsage.PromptTokens,
+			"completion_tokens": tokenUsage.CompletionTokens,
+			"total_tokens":      tokenUsage.TotalTokens,
+		},
+		"latency_ms": latencyMs,
+		"metadata":   metadata,
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal audit request: %w", err)
+	}
+
+	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/audit/llm-call", bytes.NewReader(reqBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create audit request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Gateway Mode: Audit - ContextID: %s, Provider: %s, Model: %s",
+			contextID, provider, model)
+	}
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("audit request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read audit response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(body),
+		}
+	}
+
+	var rawResp struct {
+		Success bool   `json:"success"`
+		AuditID string `json:"audit_id"`
+	}
+
+	if err := json.Unmarshal(body, &rawResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal audit response: %w", err)
+	}
+
+	result := &AuditResult{
+		Success: rawResp.Success,
+		AuditID: rawResp.AuditID,
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Gateway Mode: Audit logged - AuditID: %s", result.AuditID)
+	}
+
+	return result, nil
 }
 
 // Helper functions
