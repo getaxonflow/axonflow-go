@@ -384,3 +384,81 @@ func TestLicenseKeyPrefersOverClientID(t *testing.T) {
 		t.Errorf("Expected ClientID 'legacy-client-id', got '%s'", client.config.ClientID)
 	}
 }
+
+func TestParseTimeWithFallback(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		wantErr  bool
+		checkFn  func(t time.Time) bool
+	}{
+		{
+			name:    "RFC3339 without fractional seconds",
+			input:   "2024-12-15T10:30:00Z",
+			wantErr: false,
+			checkFn: func(t time.Time) bool {
+				return t.Year() == 2024 && t.Month() == 12 && t.Day() == 15 &&
+					t.Hour() == 10 && t.Minute() == 30 && t.Second() == 0
+			},
+		},
+		{
+			name:    "RFC3339 with timezone offset",
+			input:   "2024-12-15T10:30:00+00:00",
+			wantErr: false,
+			checkFn: func(t time.Time) bool {
+				return t.Year() == 2024 && t.Hour() == 10
+			},
+		},
+		{
+			name:    "RFC3339Nano with microseconds (6 digits)",
+			input:   "2024-12-15T10:30:00.123456Z",
+			wantErr: false,
+			checkFn: func(t time.Time) bool {
+				return t.Nanosecond() == 123456000
+			},
+		},
+		{
+			name:    "RFC3339Nano with nanoseconds (9 digits)",
+			input:   "2024-12-15T10:30:00.123456789Z",
+			wantErr: false,
+			checkFn: func(t time.Time) bool {
+				return t.Nanosecond() == 123456789
+			},
+		},
+		{
+			name:    "RFC3339Nano with nanoseconds and offset",
+			input:   "2024-12-15T10:30:00.123456789+00:00",
+			wantErr: false,
+			checkFn: func(t time.Time) bool {
+				return t.Nanosecond() == 123456789
+			},
+		},
+		{
+			name:    "RFC3339Nano with milliseconds (3 digits)",
+			input:   "2024-12-15T10:30:00.123Z",
+			wantErr: false,
+			checkFn: func(t time.Time) bool {
+				return t.Nanosecond() == 123000000
+			},
+		},
+		{
+			name:    "Invalid format",
+			input:   "not-a-date",
+			wantErr: true,
+			checkFn: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseTimeWithFallback(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseTimeWithFallback() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && tt.checkFn != nil && !tt.checkFn(got) {
+				t.Errorf("parseTimeWithFallback() = %v, check failed for input %s", got, tt.input)
+			}
+		})
+	}
+}
