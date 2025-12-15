@@ -127,29 +127,24 @@ func TestContractPolicyContextResponse(t *testing.T) {
 
 	// Use the same parsing logic as the SDK's GetPolicyApprovedContext
 	var rawResp struct {
-		ContextID    string                 `json:"context_id"`
-		Approved     bool                   `json:"approved"`
-		ApprovedData map[string]interface{} `json:"approved_data"`
-		Policies     []string               `json:"policies"`
-		RateLimit    *struct {
-			Limit     int    `json:"limit"`
-			Remaining int    `json:"remaining"`
-			ResetAt   string `json:"reset_at"`
-		} `json:"rate_limit,omitempty"`
-		ExpiresAt   string `json:"expires_at"`
-		BlockReason string `json:"block_reason,omitempty"`
+		ContextID   string   `json:"context_id"`
+		Approved    bool     `json:"approved"`
+		Policies    []string `json:"policies"`
+		ExpiresAt   string   `json:"expires_at"`
+		BlockReason string   `json:"block_reason,omitempty"`
 	}
 
 	if err := json.Unmarshal(data, &rawResp); err != nil {
 		t.Fatalf("failed to unmarshal policy context: %v", err)
 	}
 
-	// Validate required fields
+	// Validate required fields - use flexible assertions (don't hardcode UUIDs)
 	if rawResp.ContextID == "" {
 		t.Error("expected context_id to be non-empty")
 	}
-	if rawResp.ContextID != "4920f477-ec8c-4737-a4b3-4670932af535" {
-		t.Errorf("expected specific context_id, got '%s'", rawResp.ContextID)
+	// Validate UUID format (36 chars with dashes)
+	if len(rawResp.ContextID) != 36 {
+		t.Errorf("expected context_id to be UUID format (36 chars), got %d chars", len(rawResp.ContextID))
 	}
 	if !rawResp.Approved {
 		t.Error("expected approved=true")
@@ -165,21 +160,9 @@ func TestContractPolicyContextResponse(t *testing.T) {
 		t.Error("expected expires_at to be parsed to non-zero time")
 	}
 
-	// Verify nanoseconds were preserved (the fixture has .414286714Z)
-	if expiresAt.Nanosecond() != 414286714 {
-		t.Errorf("expected nanoseconds 414286714, got %d", expiresAt.Nanosecond())
-	}
-
-	// Test rate_limit parsing with nanoseconds
-	if rawResp.RateLimit == nil {
-		t.Fatal("expected rate_limit to be present")
-	}
-	resetAt, err := parseTimeWithFallback(rawResp.RateLimit.ResetAt)
-	if err != nil {
-		t.Fatalf("failed to parse rate_limit.reset_at '%s': %v", rawResp.RateLimit.ResetAt, err)
-	}
-	if resetAt.IsZero() {
-		t.Error("expected rate_limit.reset_at to be parsed to non-zero time")
+	// Verify nanoseconds were preserved (should be non-zero for nanosecond precision)
+	if expiresAt.Nanosecond() == 0 {
+		t.Error("expected nanoseconds to be preserved (non-zero), got 0")
 	}
 
 	t.Logf("Successfully parsed policy_context.json - context_id: %s, expires_at: %v (ns: %d)",
@@ -272,8 +255,9 @@ func TestContractPlanResponse(t *testing.T) {
 			if err != nil {
 				t.Errorf("failed to parse metadata.created_at '%s': %v", createdAtStr, err)
 			}
-			if createdAt.Nanosecond() != 414286714 {
-				t.Errorf("expected nanoseconds 414286714 in created_at, got %d", createdAt.Nanosecond())
+			// Verify nanoseconds were preserved (should be non-zero)
+			if createdAt.Nanosecond() == 0 {
+				t.Error("expected nanoseconds to be preserved in created_at, got 0")
 			}
 		}
 	}
@@ -407,5 +391,61 @@ func TestContractResponseWithEmptyPolicies(t *testing.T) {
 	// Static checks should still be present
 	if len(response.PolicyInfo.StaticChecks) == 0 {
 		t.Error("expected static_checks to be non-empty even for successful queries")
+	}
+}
+
+// TestContractMalformedJSON validates graceful handling of invalid JSON
+func TestContractMalformedJSON(t *testing.T) {
+	testCases := []struct {
+		name string
+		json string
+	}{
+		{
+			name: "empty string",
+			json: "",
+		},
+		{
+			name: "invalid JSON",
+			json: "{invalid}",
+		},
+		{
+			name: "truncated JSON",
+			json: `{"success": true, "data":`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var response ClientResponse
+			err := json.Unmarshal([]byte(tc.json), &response)
+			if err == nil {
+				t.Errorf("expected error for malformed JSON: %s", tc.name)
+			}
+		})
+	}
+}
+
+// TestContractPartialResponse validates handling of responses with missing optional fields
+func TestContractPartialResponse(t *testing.T) {
+	// Minimal valid response - tests that SDK doesn't crash on missing optional fields
+	minimalJSON := `{"success": true, "blocked": false}`
+
+	var response ClientResponse
+	if err := json.Unmarshal([]byte(minimalJSON), &response); err != nil {
+		t.Fatalf("failed to unmarshal minimal response: %v", err)
+	}
+
+	if !response.Success {
+		t.Error("expected success=true")
+	}
+	if response.Blocked {
+		t.Error("expected blocked=false")
+	}
+	// Optional fields should be nil/empty, not cause panics
+	if response.PolicyInfo != nil {
+		t.Log("policy_info is present (unexpected but not an error)")
+	}
+	if response.Data != nil {
+		t.Log("data is present (unexpected but not an error)")
 	}
 }

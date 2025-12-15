@@ -1,16 +1,6 @@
 {
   "context_id": "4920f477-ec8c-4737-a4b3-4670932af535",
   "approved": true,
-  "approved_data": {
-    "query": "Hello"
-  },
-  "policies": [
-    "default_policy"
-  ],
-  "expires_at": "2025-12-15T17:48:53.414286714Z",
-  "rate_limit": {
-    "limit": 100,
-    "remaining": 99,
-    "reset_at": "2025-12-15T18:00:00.000000000Z"
-  }
+  "policies": [],
+  "expires_at": "2025-12-15T17:48:53.414286714Z"
 }

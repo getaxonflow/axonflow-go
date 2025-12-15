@@ -16,6 +16,7 @@ jobs:
   contract-tests:
     name: Contract Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
     - name: Checkout SDK
@@ -34,6 +35,7 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     # Only run on main branch pushes, scheduled runs, or manual dispatch
     # Skip on PRs since community repo clone may fail without authentication
     if: github.event_name != 'pull_request'
@@ -91,8 +93,18 @@ jobs:
         AXONFLOW_CLIENT_ID: demo-client
         AXONFLOW_CLIENT_SECRET: demo-secret
 
+    - name: Stop Community Stack
+      if: always()
+      run: |
+        if [ -d "../axonflow" ]; then
+          cd ../axonflow
+          docker-compose down --volumes --remove-orphans || true
+        fi
+
     - name: Show Docker Logs on Failure
       if: failure()
       run: |
-        cd ../axonflow
-        docker-compose logs --tail=100
+        if [ -d "../axonflow" ]; then
+          cd ../axonflow
+          docker-compose logs --tail=100 || true
+        fi
