@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "data": {
+    "data": "I'm sorry, but I am unable to provide real-time weather information. My capabilities are focused on assisting with database queries. How can I assist you with your database query today?",
+    "metadata": {
+      "processed_at": "2025-12-15T17:43:50Z"
+    }
+  },
+  "blocked": false,
+  "policy_info": {
+    "policies_evaluated": [],
+    "static_checks": [
+      "sql_injection",
+      "dangerous_queries",
+      "admin_access",
+      "pii_detection"
+    ],
+    "processing_time": "737.347626ms",
+    "tenant_id": "demo-client"
+  }
+}
