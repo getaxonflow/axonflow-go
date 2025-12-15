@@ -12,9 +12,31 @@ on:
     - cron: '0 6 * * 1'  # Monday 6am UTC
 
 jobs:
+  # Contract tests run on all PRs and pushes - they don't need the stack
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout SDK
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Run Contract Tests
+      run: go test -v -run "Contract" ./...
+
+  # Integration tests only run on main branch (after merge) and scheduled runs
+  # They require the community stack which needs docker-compose
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    # Only run on main branch pushes, scheduled runs, or manual dispatch
+    # Skip on PRs since community repo clone may fail without authentication
+    if: github.event_name != 'pull_request'
 
     steps:
     - name: Checkout SDK
@@ -74,19 +96,3 @@ jobs:
       run: |
         cd ../axonflow
         docker-compose logs --tail=100
-
-  contract-tests:
-    name: Contract Tests
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout SDK
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-
-    - name: Run Contract Tests
-      run: go test -v -run "Contract" ./...
