@@ -387,10 +387,10 @@ func TestLicenseKeyPrefersOverClientID(t *testing.T) {
 
 func TestParseTimeWithFallback(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    string
-		wantErr  bool
-		checkFn  func(t time.Time) bool
+		name    string
+		input   string
+		wantErr bool
+		checkFn func(t time.Time) bool
 	}{
 		{
 			name:    "RFC3339 without fractional seconds",
