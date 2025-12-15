@@ -1,0 +1,17 @@
+{
+  "success": false,
+  "blocked": true,
+  "block_reason": "US Social Security Number pattern detected",
+  "policy_info": {
+    "policies_evaluated": [
+      "pii_ssn_detection"
+    ],
+    "static_checks": [
+      "sql_injection",
+      "dangerous_queries",
+      "admin_access"
+    ],
+    "processing_time": "2.029084ms",
+    "tenant_id": "demo-client"
+  }
+}

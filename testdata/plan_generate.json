@@ -1,0 +1,55 @@
+{
+  "success": true,
+  "plan_id": "plan-f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454",
+  "result": "",
+  "data": {
+    "plan_id": "plan-f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454",
+    "steps": [
+      {
+        "id": "step-1",
+        "name": "Search Flights",
+        "type": "connector_query",
+        "description": "Search for available flights from origin to destination",
+        "dependencies": [],
+        "agent": "travel-agent",
+        "parameters": {
+          "origin": "NYC",
+          "destination": "London"
+        },
+        "estimated_time": "5s"
+      },
+      {
+        "id": "step-2",
+        "name": "Filter Results",
+        "type": "data_processing",
+        "description": "Filter and sort flight results by price and duration",
+        "dependencies": ["step-1"],
+        "agent": "travel-agent",
+        "parameters": {
+          "sort_by": "price"
+        },
+        "estimated_time": "2s"
+      }
+    ],
+    "domain": "travel",
+    "complexity": 3,
+    "parallel": false,
+    "estimated_duration": "7s",
+    "metadata": {
+      "created_at": "2025-12-15T17:48:53.414286714Z",
+      "query": "Book a flight to London"
+    }
+  },
+  "blocked": false,
+  "policy_info": {
+    "policies_evaluated": [],
+    "static_checks": [
+      "sql_injection",
+      "dangerous_queries",
+      "admin_access",
+      "pii_detection"
+    ],
+    "processing_time": "1.523s",
+    "tenant_id": "demo-client"
+  }
+}

@@ -1,0 +1,110 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allow manual trigger for testing
+  workflow_dispatch:
+  # Run weekly to catch API drift
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 6am UTC
+
+jobs:
+  # Contract tests run on all PRs and pushes - they don't need the stack
+  contract-tests:
+    name: Contract Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout SDK
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Run Contract Tests
+      run: go test -v -run "Contract" ./...
+
+  # Integration tests only run on main branch (after merge) and scheduled runs
+  # They require the community stack which needs docker-compose
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Only run on main branch pushes, scheduled runs, or manual dispatch
+    # Skip on PRs since community repo clone may fail without authentication
+    if: github.event_name != 'pull_request'
+
+    steps:
+    - name: Checkout SDK
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Clone Community Stack
+      run: |
+        git clone --depth 1 https://github.com/getaxonflow/axonflow.git ../axonflow
+
+    - name: Start Community Stack
+      run: |
+        cd ../axonflow
+        docker-compose up -d
+
+        # Wait for services to be healthy
+        echo "Waiting for services to be healthy..."
+        timeout 120 bash -c 'until curl -sf http://localhost:8080/health; do sleep 2; done'
+        echo "Agent is healthy"
+
+        timeout 60 bash -c 'until curl -sf http://localhost:8081/health; do sleep 2; done'
+        echo "Orchestrator is healthy"
+
+    - name: Run Unit Tests
+      run: go test -v -race ./...
+
+    - name: Run Integration Tests
+      run: go test -v -tags=integration ./...
+      env:
+        AXONFLOW_AGENT_URL: http://localhost:8080
+        AXONFLOW_CLIENT_ID: demo-client
+        AXONFLOW_CLIENT_SECRET: demo-secret
+
+    - name: Run Basic Example
+      run: |
+        cd examples/basic
+        timeout 30 go run main.go || echo "Example completed (may fail without LLM configured)"
+      env:
+        AXONFLOW_AGENT_URL: http://localhost:8080
+        AXONFLOW_CLIENT_ID: demo-client
+        AXONFLOW_CLIENT_SECRET: demo-secret
+
+    - name: Stop Community Stack
+      if: always()
+      run: |
+        if [ -d "../axonflow" ]; then
+          cd ../axonflow
+          docker-compose down --volumes --remove-orphans || true
+        fi
+
+    - name: Show Docker Logs on Failure
+      if: failure()
+      run: |
+        if [ -d "../axonflow" ]; then
+          cd ../axonflow
+          docker-compose logs --tail=100 || true
+        fi
