@@ -702,14 +702,22 @@ func (c *AxonFlowClient) QueryConnector(userToken, connectorName, query string, 
 	return connResp, nil
 }
 
-// GeneratePlan creates a multi-agent execution plan from a natural language query
-func (c *AxonFlowClient) GeneratePlan(query string, domain string) (*PlanResponse, error) {
+// GeneratePlan creates a multi-agent execution plan from a natural language query.
+// The userToken parameter is optional; if not provided, it defaults to the client ID.
+// Usage: GeneratePlan(query, domain) or GeneratePlan(query, domain, userToken)
+func (c *AxonFlowClient) GeneratePlan(query string, domain string, userToken ...string) (*PlanResponse, error) {
 	context := map[string]interface{}{}
 	if domain != "" {
 		context["domain"] = domain
 	}
 
-	resp, err := c.ExecuteQuery("", query, "multi-agent-plan", context)
+	// Use client ID as fallback if no user token provided
+	token := c.config.ClientID
+	if len(userToken) > 0 && userToken[0] != "" {
+		token = userToken[0]
+	}
+
+	resp, err := c.ExecuteQuery(token, query, "multi-agent-plan", context)
 	if err != nil {
 		return nil, err
 	}
@@ -740,13 +748,21 @@ func (c *AxonFlowClient) GeneratePlan(query string, domain string) (*PlanRespons
 	return &plan, nil
 }
 
-// ExecutePlan executes a previously generated multi-agent plan
-func (c *AxonFlowClient) ExecutePlan(planID string) (*PlanExecutionResponse, error) {
+// ExecutePlan executes a previously generated multi-agent plan.
+// The userToken parameter is optional; if not provided, it defaults to the client ID.
+// Usage: ExecutePlan(planID) or ExecutePlan(planID, userToken)
+func (c *AxonFlowClient) ExecutePlan(planID string, userToken ...string) (*PlanExecutionResponse, error) {
 	context := map[string]interface{}{
 		"plan_id": planID,
 	}
 
-	resp, err := c.ExecuteQuery("", "", "execute-plan", context)
+	// Use client ID as fallback if no user token provided
+	token := c.config.ClientID
+	if len(userToken) > 0 && userToken[0] != "" {
+		token = userToken[0]
+	}
+
+	resp, err := c.ExecuteQuery(token, "", "execute-plan", context)
 	if err != nil {
 		return nil, err
 	}
@@ -948,8 +964,8 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 		return nil, fmt.Errorf("failed to unmarshal pre-check response: %w", err)
 	}
 
-	// Parse expiration time
-	expiresAt, err := time.Parse(time.RFC3339, rawResp.ExpiresAt)
+	// Parse expiration time (supports both RFC3339 and RFC3339Nano formats)
+	expiresAt, err := parseTimeWithFallback(rawResp.ExpiresAt)
 	if err != nil {
 		// Use a default expiration if parsing fails
 		expiresAt = time.Now().Add(5 * time.Minute)
@@ -969,7 +985,7 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 
 	// Parse rate limit info if present
 	if rawResp.RateLimit != nil {
-		resetAt, err := time.Parse(time.RFC3339, rawResp.RateLimit.ResetAt)
+		resetAt, err := parseTimeWithFallback(rawResp.RateLimit.ResetAt)
 		if err != nil && c.config.Debug {
 			log.Printf("[AxonFlow] Warning: Failed to parse rate_limit.reset_at '%s'", rawResp.RateLimit.ResetAt)
 		}
@@ -1098,6 +1114,19 @@ func (c *AxonFlowClient) AuditLLMCall(
 }
 
 // Helper functions
+
+// parseTimeWithFallback tries to parse a time string using RFC3339Nano first (with fractional seconds),
+// then falls back to RFC3339 (without fractional seconds). This handles timestamps from the server
+// that may or may not include nanosecond precision.
+func parseTimeWithFallback(value string) (time.Time, error) {
+	// Try RFC3339Nano first (supports fractional seconds up to nanosecond precision)
+	if t, err := time.Parse(time.RFC3339Nano, value); err == nil {
+		return t, nil
+	}
+	// Fall back to RFC3339 (no fractional seconds)
+	return time.Parse(time.RFC3339, value)
+}
+
 func min(a, b int) int {
 	if a < b {
 		return a
