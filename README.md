@@ -235,6 +235,110 @@ resp, err := client.ExecuteQuery(...)
 // err == nil, resp.Success == true, resp.Error contains warning
 ```
 
+## LLM Interceptors (OpenAI & Anthropic)
+
+Wrap your LLM clients with automatic AxonFlow governance using the interceptors package:
+
+### OpenAI Interceptor
+
+```go
+import (
+    "context"
+    "github.com/sashabaranov/go-openai"
+    "github.com/getaxonflow/axonflow-sdk-go"
+    "github.com/getaxonflow/axonflow-sdk-go/interceptors"
+)
+
+// Initialize AxonFlow client
+axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
+    AgentURL:   "https://staging-eu.getaxonflow.com",
+    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+})
+
+// Create an adapter for the OpenAI client
+openaiClient := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
+
+// Use the function wrapper for direct usage
+wrappedFn := interceptors.WrapOpenAIFunc(
+    func(ctx context.Context, req interceptors.ChatCompletionRequest) (interceptors.ChatCompletionResponse, error) {
+        // Convert to go-openai types and call
+        goReq := openai.ChatCompletionRequest{
+            Model: req.Model,
+            Messages: convertMessages(req.Messages),
+        }
+        resp, err := openaiClient.CreateChatCompletion(ctx, goReq)
+        if err != nil {
+            return interceptors.ChatCompletionResponse{}, err
+        }
+        return convertResponse(resp), nil
+    },
+    axonflowClient,
+    "user-token",
+)
+
+// Use wrapped function - governance happens automatically
+resp, err := wrappedFn(ctx, interceptors.ChatCompletionRequest{
+    Model: "gpt-4",
+    Messages: []interceptors.ChatMessage{
+        {Role: "user", Content: "Hello, world!"},
+    },
+})
+
+if err != nil {
+    if interceptors.IsPolicyViolationError(err) {
+        pve, _ := interceptors.GetPolicyViolation(err)
+        log.Printf("Blocked: %s (policies: %v)", pve.BlockReason, pve.Policies)
+    }
+}
+```
+
+### Anthropic Interceptor
+
+```go
+import (
+    "context"
+    "github.com/getaxonflow/axonflow-sdk-go"
+    "github.com/getaxonflow/axonflow-sdk-go/interceptors"
+)
+
+// Create Anthropic interceptor
+wrappedFn := interceptors.WrapAnthropicFunc(
+    yourAnthropicCreateFn,
+    axonflowClient,
+    "user-token",
+)
+
+// Use wrapped function
+resp, err := wrappedFn(ctx, interceptors.AnthropicMessageRequest{
+    Model:     "claude-3-sonnet-20240229",
+    MaxTokens: 1024,
+    Messages: []interceptors.AnthropicMessage{
+        interceptors.CreateUserMessage("Hello, Claude!"),
+    },
+})
+```
+
+### Interface-Based Wrapping
+
+For more flexibility, implement the `OpenAIChatCompleter` or `AnthropicMessageCreator` interfaces:
+
+```go
+// Implement the interface
+type MyOpenAIClient struct {
+    // your fields
+}
+
+func (c *MyOpenAIClient) CreateChatCompletion(ctx context.Context, req interceptors.ChatCompletionRequest) (interceptors.ChatCompletionResponse, error) {
+    // your implementation
+}
+
+// Wrap the client
+wrapped := interceptors.WrapOpenAIClient(&MyOpenAIClient{}, axonflowClient, "user-token")
+
+// Use wrapped client
+resp, err := wrapped.CreateChatCompletion(ctx, req)
+```
+
 ## MCP Connector Marketplace
 
 Integrate with external data sources using AxonFlow's MCP (Model Context Protocol) connectors:
