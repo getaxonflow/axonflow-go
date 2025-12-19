@@ -77,10 +77,10 @@ type BedrockClaudeRequest struct {
 
 // BedrockClaudeResponse represents a response from Claude on Bedrock
 type BedrockClaudeResponse struct {
-	ID         string `json:"id"`
-	Type       string `json:"type"`
-	Role       string `json:"role"`
-	Content    []struct {
+	ID      string `json:"id"`
+	Type    string `json:"type"`
+	Role    string `json:"role"`
+	Content []struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	} `json:"content"`
