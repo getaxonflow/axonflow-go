@@ -146,7 +146,7 @@ type BedrockInvokeFunc func(ctx context.Context, input *BedrockInvokeInput) (*Be
 //		axonflow,
 //		"user-123",
 //	)
-func WrapBedrockInvokeModel(fn BedrockInvokeFunc, axonflow *axonflow.AxonFlowClient, userToken string) BedrockInvokeFunc {
+func WrapBedrockInvokeModel(fn BedrockInvokeFunc, axonflowClient *axonflow.AxonFlowClient, userToken string) BedrockInvokeFunc {
 	return func(ctx context.Context, input *BedrockInvokeInput) (*BedrockInvokeOutput, error) {
 		// Extract prompt from body
 		prompt := extractBedrockPrompt(input.Body, input.ModelId)
@@ -156,7 +156,7 @@ func WrapBedrockInvokeModel(fn BedrockInvokeFunc, axonflow *axonflow.AxonFlowCli
 			"model":    input.ModelId,
 		}
 
-		policyResult, err := axonflow.GetPolicyApprovedContext(userToken, nil, prompt, preCheckCtx)
+		policyResult, err := axonflowClient.GetPolicyApprovedContext(userToken, prompt, nil, preCheckCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +164,7 @@ func WrapBedrockInvokeModel(fn BedrockInvokeFunc, axonflow *axonflow.AxonFlowCli
 		if !policyResult.Approved {
 			return nil, &PolicyViolationError{
 				BlockReason: policyResult.BlockReason,
-				Policies:    policyResult.AppliedPolicies,
+				Policies:    policyResult.Policies,
 			}
 		}
 
@@ -186,7 +186,7 @@ func WrapBedrockInvokeModel(fn BedrockInvokeFunc, axonflow *axonflow.AxonFlowCli
 				TotalTokens:      promptTokens + completionTokens,
 			}
 
-			_, _ = axonflow.AuditLLMCall(
+			_, _ = axonflowClient.AuditLLMCall(
 				policyResult.ContextID,
 				summary,
 				"bedrock",
@@ -255,4 +255,12 @@ func extractBedrockResponseInfo(body []byte, modelId string) (summary string, pr
 	}
 
 	return "", 0, 0
+}
+
+// truncateString truncates a string to the specified length
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }

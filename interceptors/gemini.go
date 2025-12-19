@@ -152,7 +152,7 @@ func (w *WrappedGeminiModel) GenerateContent(ctx context.Context, parts ...Gemin
 		"model":    w.modelName,
 	}
 
-	policyResult, err := w.axonflow.GetPolicyApprovedContext(w.userToken, nil, prompt, preCheckCtx)
+	policyResult, err := w.axonflow.GetPolicyApprovedContext(w.userToken, prompt, nil, preCheckCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (w *WrappedGeminiModel) GenerateContent(ctx context.Context, parts ...Gemin
 	if !policyResult.Approved {
 		return nil, &PolicyViolationError{
 			BlockReason: policyResult.BlockReason,
-			Policies:    policyResult.AppliedPolicies,
+			Policies:    policyResult.Policies,
 		}
 	}
 
@@ -222,7 +222,7 @@ func (w *WrappedGeminiModel) GenerateContent(ctx context.Context, parts ...Gemin
 //		"user-123",
 //		"gemini-pro",
 //	)
-func WrapGeminiFunc(fn GeminiGenerateFunc, axonflow *axonflow.AxonFlowClient, userToken, modelName string) GeminiGenerateFunc {
+func WrapGeminiFunc(fn GeminiGenerateFunc, axonflowClient *axonflow.AxonFlowClient, userToken, modelName string) GeminiGenerateFunc {
 	return func(ctx context.Context, parts ...GeminiPart) (*GeminiGenerateContentResponse, error) {
 		prompt := extractGeminiPrompt(parts)
 
@@ -231,7 +231,7 @@ func WrapGeminiFunc(fn GeminiGenerateFunc, axonflow *axonflow.AxonFlowClient, us
 			"model":    modelName,
 		}
 
-		policyResult, err := axonflow.GetPolicyApprovedContext(userToken, nil, prompt, preCheckCtx)
+		policyResult, err := axonflowClient.GetPolicyApprovedContext(userToken, prompt, nil, preCheckCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +239,7 @@ func WrapGeminiFunc(fn GeminiGenerateFunc, axonflow *axonflow.AxonFlowClient, us
 		if !policyResult.Approved {
 			return nil, &PolicyViolationError{
 				BlockReason: policyResult.BlockReason,
-				Policies:    policyResult.AppliedPolicies,
+				Policies:    policyResult.Policies,
 			}
 		}
 
@@ -266,7 +266,7 @@ func WrapGeminiFunc(fn GeminiGenerateFunc, axonflow *axonflow.AxonFlowClient, us
 				}
 			}
 
-			_, _ = axonflow.AuditLLMCall(
+			_, _ = axonflowClient.AuditLLMCall(
 				policyResult.ContextID,
 				summary,
 				"gemini",

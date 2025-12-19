@@ -122,10 +122,10 @@ type WrappedOllamaClient struct {
 //	client := &MyOllamaClient{host: "http://localhost:11434"}
 //	wrapped := interceptors.WrapOllamaChatClient(client, axonflowClient, "user-123")
 //	resp, err := wrapped.Chat(ctx, &OllamaChatRequest{...})
-func WrapOllamaChatClient(client OllamaChatClient, axonflow *axonflow.AxonFlowClient, userToken string) *WrappedOllamaClient {
+func WrapOllamaChatClient(client OllamaChatClient, axonflowClient *axonflow.AxonFlowClient, userToken string) *WrappedOllamaClient {
 	return &WrappedOllamaClient{
 		chatClient: client,
-		axonflow:   axonflow,
+		axonflow:   axonflowClient,
 		userToken:  userToken,
 	}
 }
@@ -141,7 +141,7 @@ func (w *WrappedOllamaClient) Chat(ctx context.Context, req *OllamaChatRequest) 
 		"model":    req.Model,
 	}
 
-	policyResult, err := w.axonflow.GetPolicyApprovedContext(w.userToken, nil, prompt, preCheckCtx)
+	policyResult, err := w.axonflow.GetPolicyApprovedContext(w.userToken, prompt, nil, preCheckCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (w *WrappedOllamaClient) Chat(ctx context.Context, req *OllamaChatRequest) 
 	if !policyResult.Approved {
 		return nil, &PolicyViolationError{
 			BlockReason: policyResult.BlockReason,
-			Policies:    policyResult.AppliedPolicies,
+			Policies:    policyResult.Policies,
 		}
 	}
 
@@ -200,7 +200,7 @@ func (w *WrappedOllamaClient) Chat(ctx context.Context, req *OllamaChatRequest) 
 //		axonflow,
 //		"user-123",
 //	)
-func WrapOllamaChatFunc(fn OllamaChatFunc, axonflow *axonflow.AxonFlowClient, userToken string) OllamaChatFunc {
+func WrapOllamaChatFunc(fn OllamaChatFunc, axonflowClient *axonflow.AxonFlowClient, userToken string) OllamaChatFunc {
 	return func(ctx context.Context, req *OllamaChatRequest) (*OllamaChatResponse, error) {
 		prompt := extractOllamaPrompt(req.Messages)
 
@@ -209,7 +209,7 @@ func WrapOllamaChatFunc(fn OllamaChatFunc, axonflow *axonflow.AxonFlowClient, us
 			"model":    req.Model,
 		}
 
-		policyResult, err := axonflow.GetPolicyApprovedContext(userToken, nil, prompt, preCheckCtx)
+		policyResult, err := axonflowClient.GetPolicyApprovedContext(userToken, prompt, nil, preCheckCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +217,7 @@ func WrapOllamaChatFunc(fn OllamaChatFunc, axonflow *axonflow.AxonFlowClient, us
 		if !policyResult.Approved {
 			return nil, &PolicyViolationError{
 				BlockReason: policyResult.BlockReason,
-				Policies:    policyResult.AppliedPolicies,
+				Policies:    policyResult.Policies,
 			}
 		}
 
@@ -241,7 +241,7 @@ func WrapOllamaChatFunc(fn OllamaChatFunc, axonflow *axonflow.AxonFlowClient, us
 				TotalTokens:      resp.PromptEvalCount + resp.EvalCount,
 			}
 
-			_, _ = axonflow.AuditLLMCall(
+			_, _ = axonflowClient.AuditLLMCall(
 				policyResult.ContextID,
 				summary,
 				"ollama",
@@ -257,14 +257,14 @@ func WrapOllamaChatFunc(fn OllamaChatFunc, axonflow *axonflow.AxonFlowClient, us
 }
 
 // WrapOllamaGenerateFunc wraps an Ollama generate function for governance.
-func WrapOllamaGenerateFunc(fn OllamaGenerateFunc, axonflow *axonflow.AxonFlowClient, userToken string) OllamaGenerateFunc {
+func WrapOllamaGenerateFunc(fn OllamaGenerateFunc, axonflowClient *axonflow.AxonFlowClient, userToken string) OllamaGenerateFunc {
 	return func(ctx context.Context, req *OllamaGenerateRequest) (*OllamaGenerateResponse, error) {
 		preCheckCtx := map[string]interface{}{
 			"provider": "ollama",
 			"model":    req.Model,
 		}
 
-		policyResult, err := axonflow.GetPolicyApprovedContext(userToken, nil, req.Prompt, preCheckCtx)
+		policyResult, err := axonflowClient.GetPolicyApprovedContext(userToken, req.Prompt, nil, preCheckCtx)
 		if err != nil {
 			return nil, err
 		}
@@ -272,7 +272,7 @@ func WrapOllamaGenerateFunc(fn OllamaGenerateFunc, axonflow *axonflow.AxonFlowCl
 		if !policyResult.Approved {
 			return nil, &PolicyViolationError{
 				BlockReason: policyResult.BlockReason,
-				Policies:    policyResult.AppliedPolicies,
+				Policies:    policyResult.Policies,
 			}
 		}
 
@@ -296,7 +296,7 @@ func WrapOllamaGenerateFunc(fn OllamaGenerateFunc, axonflow *axonflow.AxonFlowCl
 				TotalTokens:      resp.PromptEvalCount + resp.EvalCount,
 			}
 
-			_, _ = axonflow.AuditLLMCall(
+			_, _ = axonflowClient.AuditLLMCall(
 				policyResult.ContextID,
 				summary,
 				"ollama",
