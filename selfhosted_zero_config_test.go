@@ -354,3 +354,6 @@ func TestZeroConfig_FirstTimeUser(t *testing.T) {
 	t.Log("   - Health check: OK")
 	t.Log("   - Pre-check: OK")
 }
+
+// Note: Section 7 (Auth Headers) tests are in selfhosted_auth_headers_test.go
+// They use httptest and run without the integration build tag
