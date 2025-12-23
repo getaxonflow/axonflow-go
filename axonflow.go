@@ -27,6 +27,7 @@ type AxonFlowConfig struct {
 	Mode         string        // "production" | "sandbox" (default: "production")
 	Debug        bool          // Enable debug logging (default: false)
 	Timeout      time.Duration // Request timeout (default: 60s)
+	MapTimeout   time.Duration // Timeout for MAP operations (default: 120s) - MAP involves multiple LLM calls
 	Retry        RetryConfig   // Retry configuration
 	Cache        CacheConfig   // Cache configuration
 }
@@ -46,9 +47,10 @@ type CacheConfig struct {
 
 // AxonFlowClient represents the SDK for connecting to AxonFlow platform
 type AxonFlowClient struct {
-	config     AxonFlowConfig
-	httpClient *http.Client
-	cache      *cache
+	config        AxonFlowConfig
+	httpClient    *http.Client
+	mapHttpClient *http.Client // Separate client with longer timeout for MAP operations
+	cache         *cache
 }
 
 // ClientRequest represents a request to AxonFlow Agent
@@ -281,6 +283,9 @@ func NewClient(config AxonFlowConfig) *AxonFlowClient {
 	if config.Timeout == 0 {
 		config.Timeout = 60 * time.Second
 	}
+	if config.MapTimeout == 0 {
+		config.MapTimeout = 120 * time.Second // 2 minutes for MAP operations
+	}
 	if config.Retry.InitialDelay == 0 {
 		config.Retry.InitialDelay = 1 * time.Second
 	}
@@ -309,6 +314,10 @@ func NewClient(config AxonFlowConfig) *AxonFlowClient {
 			Timeout:   config.Timeout,
 			Transport: transport,
 		},
+		mapHttpClient: &http.Client{
+			Timeout:   config.MapTimeout,
+			Transport: transport,
+		},
 	}
 
 	if config.Cache.Enabled {
@@ -316,7 +325,7 @@ func NewClient(config AxonFlowConfig) *AxonFlowClient {
 	}
 
 	if config.Debug {
-		log.Printf("[AxonFlow] Client initialized - Mode: %s, Endpoint: %s", config.Mode, config.AgentURL)
+		log.Printf("[AxonFlow] Client initialized - Mode: %s, Endpoint: %s, MapTimeout: %v", config.Mode, config.AgentURL, config.MapTimeout)
 	}
 
 	return client
@@ -705,6 +714,7 @@ func (c *AxonFlowClient) QueryConnector(userToken, connectorName, query string, 
 // GeneratePlan creates a multi-agent execution plan from a natural language query.
 // The userToken parameter is optional; if not provided, it defaults to the client ID.
 // Usage: GeneratePlan(query, domain) or GeneratePlan(query, domain, userToken)
+// Note: This uses MapTimeout (default 120s) as MAP operations involve multiple LLM calls.
 func (c *AxonFlowClient) GeneratePlan(query string, domain string, userToken ...string) (*PlanResponse, error) {
 	context := map[string]interface{}{}
 	if domain != "" {
@@ -717,7 +727,16 @@ func (c *AxonFlowClient) GeneratePlan(query string, domain string, userToken ...
 		token = userToken[0]
 	}
 
-	resp, err := c.ExecuteQuery(token, query, "multi-agent-plan", context)
+	// Use executeMapRequest with longer timeout for MAP operations
+	req := ClientRequest{
+		Query:       query,
+		UserToken:   token,
+		ClientID:    c.config.ClientID,
+		RequestType: "multi-agent-plan",
+		Context:     context,
+	}
+
+	resp, err := c.executeMapRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -746,6 +765,93 @@ func (c *AxonFlowClient) GeneratePlan(query string, domain string, userToken ...
 	}
 
 	return &plan, nil
+}
+
+// executeMapRequest executes a MAP request using the mapHttpClient with longer timeout
+func (c *AxonFlowClient) executeMapRequest(req ClientRequest) (*ClientResponse, error) {
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/request", bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] MAP request - Query: %s (timeout: %v)", req.Query[:min(50, len(req.Query))], c.config.MapTimeout)
+	}
+
+	startTime := time.Now()
+	resp, err := c.mapHttpClient.Do(httpReq) // Use mapHttpClient with longer timeout
+	if err != nil {
+		return nil, fmt.Errorf("MAP request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	duration := time.Since(startTime)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] MAP response received in %v", duration)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(body),
+		}
+	}
+
+	var clientResp ClientResponse
+	if err := json.Unmarshal(body, &clientResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	// Check for nested errors/data in the Data field (same logic as executeRequest)
+	if clientResp.Data != nil {
+		if dataMap, ok := clientResp.Data.(map[string]interface{}); ok {
+			if dataSuccess, hasSuccess := dataMap["success"].(bool); hasSuccess && !dataSuccess {
+				if errorMsg, hasError := dataMap["error"].(string); hasError {
+					clientResp.Error = errorMsg
+					clientResp.Success = false
+				}
+			}
+			if clientResp.Result == "" {
+				if dataResult, hasResult := dataMap["result"].(string); hasResult && dataResult != "" {
+					clientResp.Result = dataResult
+				}
+			}
+			if clientResp.PlanID == "" {
+				if dataPlanID, hasPlanID := dataMap["plan_id"].(string); hasPlanID && dataPlanID != "" {
+					clientResp.PlanID = dataPlanID
+				}
+			}
+			if clientResp.Metadata == nil {
+				if dataMetadata, hasMetadata := dataMap["metadata"].(map[string]interface{}); hasMetadata {
+					clientResp.Metadata = dataMetadata
+				}
+			}
+		}
+	}
+
+	return &clientResp, nil
 }
 
 // ExecutePlan executes a previously generated multi-agent plan.
