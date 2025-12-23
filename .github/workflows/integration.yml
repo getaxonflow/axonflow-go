@@ -31,7 +31,7 @@ jobs:
       run: go test -v -run "Contract" ./...
 
   # Integration tests only run on main branch (after merge) and scheduled runs
-  # They require the community stack which needs docker-compose
+  # They require the community stack which needs docker compose
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
     - name: Start Community Stack
       run: |
         cd ../axonflow
-        docker-compose up -d
+        docker compose up -d
 
         # Wait for services to be healthy
         echo "Waiting for services to be healthy..."
@@ -98,7 +98,7 @@ jobs:
       run: |
         if [ -d "../axonflow" ]; then
           cd ../axonflow
-          docker-compose down --volumes --remove-orphans || true
+          docker compose down --volumes --remove-orphans || true
         fi
 
     - name: Show Docker Logs on Failure
@@ -106,5 +106,5 @@ jobs:
       run: |
         if [ -d "../axonflow" ]; then
           cd ../axonflow
-          docker-compose logs --tail=100 || true
+          docker compose logs --tail=100 || true
         fi
