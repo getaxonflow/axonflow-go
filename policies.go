@@ -576,31 +576,13 @@ func (c *AxonFlowClient) DeletePolicyOverride(policyID string) error {
 	return c.policyRequest("DELETE", "/api/v1/static-policies/"+policyID+"/override", nil, nil)
 }
 
-// GetPolicyOverride gets the override for a specific policy.
-func (c *AxonFlowClient) GetPolicyOverride(policyID string) (*PolicyOverride, error) {
-	if c.config.Debug {
-		log.Printf("[AxonFlow] Getting policy override for: %s", policyID)
-	}
-
-	var override PolicyOverride
-	if err := c.policyRequest("GET", "/api/v1/static-policies/"+policyID+"/override", nil, &override); err != nil {
-		// Return nil if no override exists
-		if httpErr, ok := err.(*httpError); ok && httpErr.statusCode == 404 {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &override, nil
-}
-
 // ============================================================================
 // Dynamic Policy Methods
 // ============================================================================
 
 // ListDynamicPolicies lists all dynamic policies with optional filtering.
 func (c *AxonFlowClient) ListDynamicPolicies(options *ListDynamicPoliciesOptions) ([]DynamicPolicy, error) {
-	path := "/api/v1/dynamic-policies"
+	path := "/api/v1/policies"
 	if options != nil {
 		path += options.buildQueryParams()
 	}
@@ -624,7 +606,7 @@ func (c *AxonFlowClient) GetDynamicPolicy(id string) (*DynamicPolicy, error) {
 	}
 
 	var policy DynamicPolicy
-	if err := c.policyRequest("GET", "/api/v1/dynamic-policies/"+id, nil, &policy); err != nil {
+	if err := c.policyRequest("GET", "/api/v1/policies/"+id, nil, &policy); err != nil {
 		return nil, err
 	}
 
@@ -638,7 +620,7 @@ func (c *AxonFlowClient) CreateDynamicPolicy(req *CreateDynamicPolicyRequest) (*
 	}
 
 	var policy DynamicPolicy
-	if err := c.policyRequest("POST", "/api/v1/dynamic-policies", req, &policy); err != nil {
+	if err := c.policyRequest("POST", "/api/v1/policies", req, &policy); err != nil {
 		return nil, err
 	}
 
@@ -652,7 +634,7 @@ func (c *AxonFlowClient) UpdateDynamicPolicy(id string, req *UpdateDynamicPolicy
 	}
 
 	var policy DynamicPolicy
-	if err := c.policyRequest("PUT", "/api/v1/dynamic-policies/"+id, req, &policy); err != nil {
+	if err := c.policyRequest("PUT", "/api/v1/policies/"+id, req, &policy); err != nil {
 		return nil, err
 	}
 
@@ -665,7 +647,7 @@ func (c *AxonFlowClient) DeleteDynamicPolicy(id string) error {
 		log.Printf("[AxonFlow] Deleting dynamic policy: %s", id)
 	}
 
-	return c.policyRequest("DELETE", "/api/v1/dynamic-policies/"+id, nil, nil)
+	return c.policyRequest("DELETE", "/api/v1/policies/"+id, nil, nil)
 }
 
 // ToggleDynamicPolicy toggles a dynamic policy's enabled status.
@@ -676,7 +658,7 @@ func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicP
 
 	body := map[string]bool{"enabled": enabled}
 	var policy DynamicPolicy
-	if err := c.policyRequest("PATCH", "/api/v1/dynamic-policies/"+id, body, &policy); err != nil {
+	if err := c.policyRequest("PATCH", "/api/v1/policies/"+id, body, &policy); err != nil {
 		return nil, err
 	}
 
@@ -685,7 +667,7 @@ func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicP
 
 // GetEffectiveDynamicPolicies gets effective dynamic policies with tier inheritance applied.
 func (c *AxonFlowClient) GetEffectiveDynamicPolicies(options *EffectivePoliciesOptions) ([]DynamicPolicy, error) {
-	path := "/api/v1/dynamic-policies/effective"
+	path := "/api/v1/policies/effective"
 	if options != nil {
 		path += options.buildQueryParams()
 	}

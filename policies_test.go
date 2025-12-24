@@ -409,60 +409,11 @@ func TestDeletePolicyOverride(t *testing.T) {
 	}
 }
 
-// TestGetPolicyOverride tests getting an override
-func TestGetPolicyOverride(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(sampleOverride)
-	}))
-	defer server.Close()
-
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-	})
-
-	override, err := client.GetPolicyOverride("pol_123")
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	if override == nil {
-		t.Fatalf("Expected override, got nil")
-	}
-	if override.Action != OverrideActionWarn {
-		t.Errorf("Expected action warn, got %s", override.Action)
-	}
-}
-
-// TestGetPolicyOverrideNotFound tests getting a non-existent override
-func TestGetPolicyOverrideNotFound(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "Not found"}`))
-	}))
-	defer server.Close()
-
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-	})
-
-	override, err := client.GetPolicyOverride("pol_123")
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	if override != nil {
-		t.Errorf("Expected nil override, got %+v", override)
-	}
-}
-
 // TestListDynamicPolicies tests listing dynamic policies
 func TestListDynamicPolicies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/dynamic-policies" {
-			t.Errorf("Expected path /api/v1/dynamic-policies, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/policies" {
+			t.Errorf("Expected path /api/v1/policies, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]DynamicPolicy{sampleDynamicPolicy})
@@ -487,8 +438,8 @@ func TestListDynamicPolicies(t *testing.T) {
 // TestGetDynamicPolicy tests getting a specific dynamic policy
 func TestGetDynamicPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/dynamic-policies/dpol_456" {
-			t.Errorf("Expected path /api/v1/dynamic-policies/dpol_456, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/policies/dpol_456" {
+			t.Errorf("Expected path /api/v1/policies/dpol_456, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(sampleDynamicPolicy)
@@ -572,8 +523,8 @@ func TestDeleteDynamicPolicy(t *testing.T) {
 // TestGetEffectiveDynamicPolicies tests getting effective dynamic policies
 func TestGetEffectiveDynamicPolicies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/dynamic-policies/effective" {
-			t.Errorf("Expected path /api/v1/dynamic-policies/effective, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/policies/effective" {
+			t.Errorf("Expected path /api/v1/policies/effective, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]DynamicPolicy{sampleDynamicPolicy})
