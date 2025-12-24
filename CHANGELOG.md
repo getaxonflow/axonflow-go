@@ -5,6 +5,24 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-12-25
+
+### Added
+
+- **Policy CRUD Methods**: Full policy management support for Unified Policy Architecture v2.0.0
+  - `ListStaticPolicies()` - List policies with filtering
+  - `GetStaticPolicy()` - Get single policy by ID
+  - `CreateStaticPolicy()` - Create custom policy
+  - `UpdateStaticPolicy()` - Update existing policy
+  - `DeleteStaticPolicy()` - Delete policy
+  - `ToggleStaticPolicy()` - Enable/disable policy
+  - `GetEffectiveStaticPolicies()` - Get merged hierarchy
+  - `TestPattern()` - Test regex pattern
+
+- **Policy Override Methods** (Enterprise)
+- **Dynamic Policy Methods**
+- **New Types**: `StaticPolicy`, `DynamicPolicy`, `PolicyOverride`
+
 ## [1.5.1] - 2025-12-23
 
 ### Added
