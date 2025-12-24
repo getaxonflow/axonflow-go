@@ -81,33 +81,33 @@ const (
 
 // StaticPolicy represents a static policy definition
 type StaticPolicy struct {
-	ID             string         `json:"id"`
-	Name           string         `json:"name"`
-	Description    string         `json:"description,omitempty"`
-	Category       PolicyCategory `json:"category"`
-	Tier           PolicyTier     `json:"tier"`
-	Pattern        string         `json:"pattern"`
-	Severity       PolicySeverity `json:"severity"`
-	Enabled        bool           `json:"enabled"`
-	Action         PolicyAction   `json:"action"`
-	OrganizationID *string        `json:"organization_id,omitempty"`
-	TenantID       *string        `json:"tenant_id,omitempty"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	Version        int            `json:"version,omitempty"`
-	HasOverride    bool           `json:"has_override,omitempty"`
+	ID             string          `json:"id"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description,omitempty"`
+	Category       PolicyCategory  `json:"category"`
+	Tier           PolicyTier      `json:"tier"`
+	Pattern        string          `json:"pattern"`
+	Severity       PolicySeverity  `json:"severity"`
+	Enabled        bool            `json:"enabled"`
+	Action         PolicyAction    `json:"action"`
+	OrganizationID *string         `json:"organization_id,omitempty"`
+	TenantID       *string         `json:"tenant_id,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	Version        int             `json:"version,omitempty"`
+	HasOverride    bool            `json:"has_override,omitempty"`
 	Override       *PolicyOverride `json:"override,omitempty"`
 }
 
 // PolicyOverride represents an override for a static policy
 type PolicyOverride struct {
-	PolicyID   string         `json:"policy_id"`
-	Action     OverrideAction `json:"action"`
-	Reason     string         `json:"reason"`
-	CreatedBy  string         `json:"created_by,omitempty"`
-	CreatedAt  time.Time      `json:"created_at"`
-	ExpiresAt  *time.Time     `json:"expires_at,omitempty"`
-	Active     bool           `json:"active"`
+	PolicyID  string         `json:"policy_id"`
+	Action    OverrideAction `json:"action"`
+	Reason    string         `json:"reason"`
+	CreatedBy string         `json:"created_by,omitempty"`
+	CreatedAt time.Time      `json:"created_at"`
+	ExpiresAt *time.Time     `json:"expires_at,omitempty"`
+	Active    bool           `json:"active"`
 }
 
 // ListStaticPoliciesOptions represents options for listing static policies
@@ -158,11 +158,11 @@ type CreatePolicyOverrideRequest struct {
 
 // DynamicPolicyConfig represents configuration for a dynamic policy
 type DynamicPolicyConfig struct {
-	Type       string                    `json:"type"`
-	Rules      map[string]interface{}    `json:"rules"`
-	Conditions []DynamicPolicyCondition  `json:"conditions,omitempty"`
-	Action     PolicyAction              `json:"action"`
-	Parameters map[string]interface{}    `json:"parameters,omitempty"`
+	Type       string                   `json:"type"`
+	Rules      map[string]interface{}   `json:"rules"`
+	Conditions []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Action     PolicyAction             `json:"action"`
+	Parameters map[string]interface{}   `json:"parameters,omitempty"`
 }
 
 // DynamicPolicyCondition represents a condition for dynamic policy evaluation

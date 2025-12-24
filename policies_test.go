@@ -16,7 +16,7 @@ var sampleStaticPolicy = StaticPolicy{
 	Category:    CategorySecuritySQLI,
 	Tier:        TierSystem,
 	Pattern:     "(?i)(union\\s+select|drop\\s+table)",
-	Severity:    9,
+	Severity:    SeverityCritical,
 	Enabled:     true,
 	Action:      ActionBlock,
 	CreatedAt:   time.Now(),
@@ -59,7 +59,11 @@ func TestListStaticPolicies(t *testing.T) {
 			t.Errorf("Expected path /api/v1/static-policies, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]StaticPolicy{sampleStaticPolicy})
+		// Return wrapped response format
+		resp := map[string]interface{}{
+			"policies": []StaticPolicy{sampleStaticPolicy},
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -92,7 +96,11 @@ func TestListStaticPoliciesWithFilters(t *testing.T) {
 			t.Errorf("Expected tier=system, got %s", query.Get("tier"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]StaticPolicy{sampleStaticPolicy})
+		// Return wrapped response format
+		resp := map[string]interface{}{
+			"policies": []StaticPolicy{sampleStaticPolicy},
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -165,7 +173,7 @@ func TestCreateStaticPolicy(t *testing.T) {
 		Name:     "Block SQL Injection",
 		Category: CategorySecuritySQLI,
 		Pattern:  "(?i)(union\\s+select|drop\\s+table)",
-		Severity: 9,
+		Severity: SeverityCritical,
 		Enabled:  true,
 	}
 
@@ -185,7 +193,7 @@ func TestUpdateStaticPolicy(t *testing.T) {
 			t.Errorf("Expected PUT method, got %s", r.Method)
 		}
 		updated := sampleStaticPolicy
-		updated.Severity = 10
+		updated.Severity = SeverityHigh
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(updated)
 	}))
@@ -197,7 +205,7 @@ func TestUpdateStaticPolicy(t *testing.T) {
 		ClientSecret: "test-secret",
 	})
 
-	severity := 10
+	severity := SeverityHigh
 	req := &UpdateStaticPolicyRequest{
 		Severity: &severity,
 	}
@@ -206,8 +214,8 @@ func TestUpdateStaticPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if policy.Severity != 10 {
-		t.Errorf("Expected severity 10, got %d", policy.Severity)
+	if policy.Severity != SeverityHigh {
+		t.Errorf("Expected severity high, got %s", policy.Severity)
 	}
 }
 
@@ -268,7 +276,12 @@ func TestGetEffectiveStaticPolicies(t *testing.T) {
 			t.Errorf("Expected path /api/v1/static-policies/effective, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]StaticPolicy{sampleStaticPolicy})
+		// Return wrapped response format with static and dynamic fields
+		resp := map[string]interface{}{
+			"static":  []StaticPolicy{sampleStaticPolicy},
+			"dynamic": []DynamicPolicy{},
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -295,7 +308,7 @@ func TestTestPattern(t *testing.T) {
 		}
 		result := TestPatternResult{
 			Valid: true,
-			Results: []TestPatternMatch{
+			Matches: []TestPatternMatch{
 				{Input: "SELECT * FROM users", Matched: true},
 				{Input: "Hello world", Matched: false},
 			},
@@ -318,8 +331,8 @@ func TestTestPattern(t *testing.T) {
 	if !result.Valid {
 		t.Errorf("Expected pattern to be valid")
 	}
-	if len(result.Results) != 2 {
-		t.Errorf("Expected 2 results, got %d", len(result.Results))
+	if len(result.Matches) != 2 {
+		t.Errorf("Expected 2 matches, got %d", len(result.Matches))
 	}
 }
 
