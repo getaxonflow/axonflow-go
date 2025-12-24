@@ -1,0 +1,719 @@
+// Policy CRUD types and methods for the Unified Policy Architecture v2.0.0
+package axonflow
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// ============================================================================
+// Policy Categories and Tiers
+// ============================================================================
+
+// PolicyCategory represents policy categories for organization and filtering
+type PolicyCategory string
+
+const (
+	CategorySecuritySQLI      PolicyCategory = "security-sqli"
+	CategorySecurityAdmin     PolicyCategory = "security-admin"
+	CategoryPIIGlobal         PolicyCategory = "pii-global"
+	CategoryPIIUS             PolicyCategory = "pii-us"
+	CategoryPIIEU             PolicyCategory = "pii-eu"
+	CategoryPIIIndia          PolicyCategory = "pii-india"
+	CategoryDynamicRisk       PolicyCategory = "dynamic-risk"
+	CategoryDynamicCompliance PolicyCategory = "dynamic-compliance"
+	CategoryDynamicSecurity   PolicyCategory = "dynamic-security"
+	CategoryDynamicCost       PolicyCategory = "dynamic-cost"
+	CategoryDynamicAccess     PolicyCategory = "dynamic-access"
+	CategoryCustom            PolicyCategory = "custom"
+)
+
+// PolicyTier determines where policies apply
+type PolicyTier string
+
+const (
+	TierSystem       PolicyTier = "system"
+	TierOrganization PolicyTier = "organization"
+	TierTenant       PolicyTier = "tenant"
+)
+
+// OverrideAction represents the action to take for policy overrides
+type OverrideAction string
+
+const (
+	OverrideActionBlock  OverrideAction = "block"
+	OverrideActionWarn   OverrideAction = "warn"
+	OverrideActionLog    OverrideAction = "log"
+	OverrideActionRedact OverrideAction = "redact"
+)
+
+// PolicyAction represents the action to take when a policy matches
+type PolicyAction string
+
+const (
+	ActionBlock  PolicyAction = "block"
+	ActionWarn   PolicyAction = "warn"
+	ActionLog    PolicyAction = "log"
+	ActionRedact PolicyAction = "redact"
+	ActionAllow  PolicyAction = "allow"
+)
+
+// PolicySeverity represents policy severity levels
+type PolicySeverity string
+
+const (
+	SeverityCritical PolicySeverity = "critical"
+	SeverityHigh     PolicySeverity = "high"
+	SeverityMedium   PolicySeverity = "medium"
+	SeverityLow      PolicySeverity = "low"
+)
+
+// ============================================================================
+// Static Policy Types
+// ============================================================================
+
+// StaticPolicy represents a static policy definition
+type StaticPolicy struct {
+	ID             string          `json:"id"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description,omitempty"`
+	Category       PolicyCategory  `json:"category"`
+	Tier           PolicyTier      `json:"tier"`
+	Pattern        string          `json:"pattern"`
+	Severity       PolicySeverity  `json:"severity"`
+	Enabled        bool            `json:"enabled"`
+	Action         PolicyAction    `json:"action"`
+	OrganizationID *string         `json:"organization_id,omitempty"`
+	TenantID       *string         `json:"tenant_id,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	Version        int             `json:"version,omitempty"`
+	HasOverride    bool            `json:"has_override,omitempty"`
+	Override       *PolicyOverride `json:"override,omitempty"`
+}
+
+// PolicyOverride represents an override for a static policy
+type PolicyOverride struct {
+	PolicyID  string         `json:"policy_id"`
+	Action    OverrideAction `json:"action"`
+	Reason    string         `json:"reason"`
+	CreatedBy string         `json:"created_by,omitempty"`
+	CreatedAt time.Time      `json:"created_at"`
+	ExpiresAt *time.Time     `json:"expires_at,omitempty"`
+	Active    bool           `json:"active"`
+}
+
+// ListStaticPoliciesOptions represents options for listing static policies
+type ListStaticPoliciesOptions struct {
+	Category  PolicyCategory
+	Tier      PolicyTier
+	Enabled   *bool
+	Limit     int
+	Offset    int
+	SortBy    string
+	SortOrder string
+	Search    string
+}
+
+// CreateStaticPolicyRequest represents a request to create a new static policy
+type CreateStaticPolicyRequest struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Category    PolicyCategory `json:"category"`
+	Tier        PolicyTier     `json:"tier,omitempty"`
+	Pattern     string         `json:"pattern"`
+	Severity    PolicySeverity `json:"severity,omitempty"`
+	Enabled     bool           `json:"enabled"`
+	Action      PolicyAction   `json:"action,omitempty"`
+}
+
+// UpdateStaticPolicyRequest represents a request to update an existing static policy
+type UpdateStaticPolicyRequest struct {
+	Name        *string         `json:"name,omitempty"`
+	Description *string         `json:"description,omitempty"`
+	Category    *PolicyCategory `json:"category,omitempty"`
+	Pattern     *string         `json:"pattern,omitempty"`
+	Severity    *PolicySeverity `json:"severity,omitempty"`
+	Enabled     *bool           `json:"enabled,omitempty"`
+	Action      *PolicyAction   `json:"action,omitempty"`
+}
+
+// CreatePolicyOverrideRequest represents a request to create a policy override
+type CreatePolicyOverrideRequest struct {
+	Action    OverrideAction `json:"action"`
+	Reason    string         `json:"reason"`
+	ExpiresAt *time.Time     `json:"expires_at,omitempty"`
+}
+
+// ============================================================================
+// Dynamic Policy Types
+// ============================================================================
+
+// DynamicPolicyConfig represents configuration for a dynamic policy
+type DynamicPolicyConfig struct {
+	Type       string                   `json:"type"`
+	Rules      map[string]interface{}   `json:"rules"`
+	Conditions []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Action     PolicyAction             `json:"action"`
+	Parameters map[string]interface{}   `json:"parameters,omitempty"`
+}
+
+// DynamicPolicyCondition represents a condition for dynamic policy evaluation
+type DynamicPolicyCondition struct {
+	Field    string      `json:"field"`
+	Operator string      `json:"operator"`
+	Value    interface{} `json:"value"`
+}
+
+// DynamicPolicy represents a dynamic policy definition
+type DynamicPolicy struct {
+	ID             string              `json:"id"`
+	Name           string              `json:"name"`
+	Description    string              `json:"description,omitempty"`
+	Category       PolicyCategory      `json:"category"`
+	Tier           PolicyTier          `json:"tier"`
+	Enabled        bool                `json:"enabled"`
+	OrganizationID *string             `json:"organization_id,omitempty"`
+	TenantID       *string             `json:"tenant_id,omitempty"`
+	Config         DynamicPolicyConfig `json:"config"`
+	CreatedAt      time.Time           `json:"created_at"`
+	UpdatedAt      time.Time           `json:"updated_at"`
+	Version        int                 `json:"version,omitempty"`
+}
+
+// ListDynamicPoliciesOptions represents options for listing dynamic policies
+type ListDynamicPoliciesOptions struct {
+	Category  PolicyCategory
+	Tier      PolicyTier
+	Enabled   *bool
+	Limit     int
+	Offset    int
+	SortBy    string
+	SortOrder string
+	Search    string
+}
+
+// CreateDynamicPolicyRequest represents a request to create a dynamic policy
+type CreateDynamicPolicyRequest struct {
+	Name        string              `json:"name"`
+	Description string              `json:"description,omitempty"`
+	Category    PolicyCategory      `json:"category"`
+	Config      DynamicPolicyConfig `json:"config"`
+	Enabled     bool                `json:"enabled"`
+}
+
+// UpdateDynamicPolicyRequest represents a request to update a dynamic policy
+type UpdateDynamicPolicyRequest struct {
+	Name        *string              `json:"name,omitempty"`
+	Description *string              `json:"description,omitempty"`
+	Category    *PolicyCategory      `json:"category,omitempty"`
+	Config      *DynamicPolicyConfig `json:"config,omitempty"`
+	Enabled     *bool                `json:"enabled,omitempty"`
+}
+
+// ============================================================================
+// Pattern Testing Types
+// ============================================================================
+
+// TestPatternResult represents the result of testing a regex pattern
+type TestPatternResult struct {
+	Valid   bool               `json:"valid"`
+	Error   string             `json:"error,omitempty"`
+	Pattern string             `json:"pattern"`
+	Inputs  []string           `json:"inputs"`
+	Matches []TestPatternMatch `json:"matches"`
+}
+
+// TestPatternMatch represents an individual pattern match result
+type TestPatternMatch struct {
+	Input       string `json:"input"`
+	Matched     bool   `json:"matched"`
+	MatchedText string `json:"matched_text,omitempty"`
+	Position    int    `json:"position,omitempty"`
+}
+
+// ============================================================================
+// Policy Version Types
+// ============================================================================
+
+// PolicyVersion represents a policy version history entry
+type PolicyVersion struct {
+	Version           int                    `json:"version"`
+	ChangedBy         string                 `json:"changed_by,omitempty"`
+	ChangedAt         time.Time              `json:"changed_at"`
+	ChangeType        string                 `json:"change_type"`
+	ChangeDescription string                 `json:"change_description,omitempty"`
+	PreviousValues    map[string]interface{} `json:"previous_values,omitempty"`
+	NewValues         map[string]interface{} `json:"new_values,omitempty"`
+}
+
+// EffectivePoliciesOptions represents options for getting effective policies
+type EffectivePoliciesOptions struct {
+	Category          PolicyCategory
+	IncludeDisabled   bool
+	IncludeOverridden bool
+}
+
+// ============================================================================
+// HTTP Helper for Policy Requests
+// ============================================================================
+
+// policyRequest makes an HTTP request to the policy API
+func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, result interface{}) error {
+	var reqBody io.Reader
+	if body != nil {
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		reqBody = bytes.NewReader(bodyBytes)
+	}
+
+	fullURL := c.config.AgentURL + path
+
+	req, err := http.NewRequest(method, fullURL, reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") ||
+		strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			req.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
+	}
+
+	// Always set tenant ID for policy APIs (uses ClientID as tenant)
+	if c.config.ClientID != "" {
+		req.Header.Set("X-Tenant-ID", c.config.ClientID)
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Policy request: %s %s", method, path)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(respBody),
+		}
+	}
+
+	// Handle no-content responses
+	if resp.StatusCode == 204 || len(respBody) == 0 {
+		return nil
+	}
+
+	if result != nil {
+		if err := json.Unmarshal(respBody, result); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// buildQueryParams builds query parameters from options
+func (o *ListStaticPoliciesOptions) buildQueryParams() string {
+	params := url.Values{}
+	if o.Category != "" {
+		params.Set("category", string(o.Category))
+	}
+	if o.Tier != "" {
+		params.Set("tier", string(o.Tier))
+	}
+	if o.Enabled != nil {
+		if *o.Enabled {
+			params.Set("enabled", "true")
+		} else {
+			params.Set("enabled", "false")
+		}
+	}
+	if o.Limit > 0 {
+		params.Set("limit", fmt.Sprintf("%d", o.Limit))
+	}
+	if o.Offset > 0 {
+		params.Set("offset", fmt.Sprintf("%d", o.Offset))
+	}
+	if o.SortBy != "" {
+		params.Set("sort_by", o.SortBy)
+	}
+	if o.SortOrder != "" {
+		params.Set("sort_order", o.SortOrder)
+	}
+	if o.Search != "" {
+		params.Set("search", o.Search)
+	}
+	if encoded := params.Encode(); encoded != "" {
+		return "?" + encoded
+	}
+	return ""
+}
+
+func (o *ListDynamicPoliciesOptions) buildQueryParams() string {
+	params := url.Values{}
+	if o.Category != "" {
+		params.Set("category", string(o.Category))
+	}
+	if o.Tier != "" {
+		params.Set("tier", string(o.Tier))
+	}
+	if o.Enabled != nil {
+		if *o.Enabled {
+			params.Set("enabled", "true")
+		} else {
+			params.Set("enabled", "false")
+		}
+	}
+	if o.Limit > 0 {
+		params.Set("limit", fmt.Sprintf("%d", o.Limit))
+	}
+	if o.Offset > 0 {
+		params.Set("offset", fmt.Sprintf("%d", o.Offset))
+	}
+	if o.SortBy != "" {
+		params.Set("sort_by", o.SortBy)
+	}
+	if o.SortOrder != "" {
+		params.Set("sort_order", o.SortOrder)
+	}
+	if o.Search != "" {
+		params.Set("search", o.Search)
+	}
+	if encoded := params.Encode(); encoded != "" {
+		return "?" + encoded
+	}
+	return ""
+}
+
+func (o *EffectivePoliciesOptions) buildQueryParams() string {
+	params := url.Values{}
+	if o.Category != "" {
+		params.Set("category", string(o.Category))
+	}
+	if o.IncludeDisabled {
+		params.Set("include_disabled", "true")
+	}
+	if o.IncludeOverridden {
+		params.Set("include_overridden", "true")
+	}
+	if encoded := params.Encode(); encoded != "" {
+		return "?" + encoded
+	}
+	return ""
+}
+
+// ============================================================================
+// Static Policy Methods
+// ============================================================================
+
+// staticPoliciesResponse wraps the list static policies API response
+type staticPoliciesResponse struct {
+	Policies []StaticPolicy `json:"policies"`
+}
+
+// ListStaticPolicies lists all static policies with optional filtering.
+func (c *AxonFlowClient) ListStaticPolicies(options *ListStaticPoliciesOptions) ([]StaticPolicy, error) {
+	path := "/api/v1/static-policies"
+	if options != nil {
+		path += options.buildQueryParams()
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Listing static policies: %s", path)
+	}
+
+	var response staticPoliciesResponse
+	if err := c.policyRequest("GET", path, nil, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Policies, nil
+}
+
+// GetStaticPolicy gets a specific static policy by ID.
+func (c *AxonFlowClient) GetStaticPolicy(id string) (*StaticPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Getting static policy: %s", id)
+	}
+
+	var policy StaticPolicy
+	if err := c.policyRequest("GET", "/api/v1/static-policies/"+id, nil, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// CreateStaticPolicy creates a new static policy.
+func (c *AxonFlowClient) CreateStaticPolicy(req *CreateStaticPolicyRequest) (*StaticPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Creating static policy: %s", req.Name)
+	}
+
+	// Set default tier if not specified
+	if req.Tier == "" {
+		req.Tier = TierTenant
+	}
+
+	var policy StaticPolicy
+	if err := c.policyRequest("POST", "/api/v1/static-policies", req, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// UpdateStaticPolicy updates an existing static policy.
+func (c *AxonFlowClient) UpdateStaticPolicy(id string, req *UpdateStaticPolicyRequest) (*StaticPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Updating static policy: %s", id)
+	}
+
+	var policy StaticPolicy
+	if err := c.policyRequest("PUT", "/api/v1/static-policies/"+id, req, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// DeleteStaticPolicy deletes a static policy.
+func (c *AxonFlowClient) DeleteStaticPolicy(id string) error {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Deleting static policy: %s", id)
+	}
+
+	return c.policyRequest("DELETE", "/api/v1/static-policies/"+id, nil, nil)
+}
+
+// ToggleStaticPolicy toggles a static policy's enabled status.
+func (c *AxonFlowClient) ToggleStaticPolicy(id string, enabled bool) (*StaticPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Toggling static policy: %s (enabled=%v)", id, enabled)
+	}
+
+	body := map[string]bool{"enabled": enabled}
+	var policy StaticPolicy
+	if err := c.policyRequest("PATCH", "/api/v1/static-policies/"+id, body, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// effectivePoliciesResponse wraps the effective policies API response
+type effectivePoliciesResponse struct {
+	Static  []StaticPolicy  `json:"static"`
+	Dynamic []DynamicPolicy `json:"dynamic"`
+}
+
+// GetEffectiveStaticPolicies gets effective static policies with tier inheritance applied.
+func (c *AxonFlowClient) GetEffectiveStaticPolicies(options *EffectivePoliciesOptions) ([]StaticPolicy, error) {
+	path := "/api/v1/static-policies/effective"
+	if options != nil {
+		path += options.buildQueryParams()
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Getting effective static policies: %s", path)
+	}
+
+	var response effectivePoliciesResponse
+	if err := c.policyRequest("GET", path, nil, &response); err != nil {
+		return nil, err
+	}
+
+	return response.Static, nil
+}
+
+// TestPattern tests a regex pattern against sample inputs.
+func (c *AxonFlowClient) TestPattern(pattern string, testInputs []string) (*TestPatternResult, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Testing pattern: %s (%d inputs)", pattern, len(testInputs))
+	}
+
+	body := map[string]interface{}{
+		"pattern": pattern,
+		"inputs":  testInputs,
+	}
+
+	var result TestPatternResult
+	if err := c.policyRequest("POST", "/api/v1/static-policies/test", body, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// GetStaticPolicyVersions gets version history for a static policy.
+func (c *AxonFlowClient) GetStaticPolicyVersions(id string) ([]PolicyVersion, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Getting static policy versions: %s", id)
+	}
+
+	var versions []PolicyVersion
+	if err := c.policyRequest("GET", "/api/v1/static-policies/"+id+"/versions", nil, &versions); err != nil {
+		return nil, err
+	}
+
+	return versions, nil
+}
+
+// ============================================================================
+// Policy Override Methods (Enterprise)
+// ============================================================================
+
+// CreatePolicyOverride creates an override for a static policy.
+func (c *AxonFlowClient) CreatePolicyOverride(policyID string, req *CreatePolicyOverrideRequest) (*PolicyOverride, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Creating policy override for: %s", policyID)
+	}
+
+	var override PolicyOverride
+	if err := c.policyRequest("POST", "/api/v1/static-policies/"+policyID+"/override", req, &override); err != nil {
+		return nil, err
+	}
+
+	return &override, nil
+}
+
+// DeletePolicyOverride deletes an override for a static policy.
+func (c *AxonFlowClient) DeletePolicyOverride(policyID string) error {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Deleting policy override for: %s", policyID)
+	}
+
+	return c.policyRequest("DELETE", "/api/v1/static-policies/"+policyID+"/override", nil, nil)
+}
+
+// ============================================================================
+// Dynamic Policy Methods
+// ============================================================================
+
+// ListDynamicPolicies lists all dynamic policies with optional filtering.
+func (c *AxonFlowClient) ListDynamicPolicies(options *ListDynamicPoliciesOptions) ([]DynamicPolicy, error) {
+	path := "/api/v1/policies"
+	if options != nil {
+		path += options.buildQueryParams()
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Listing dynamic policies: %s", path)
+	}
+
+	var policies []DynamicPolicy
+	if err := c.policyRequest("GET", path, nil, &policies); err != nil {
+		return nil, err
+	}
+
+	return policies, nil
+}
+
+// GetDynamicPolicy gets a specific dynamic policy by ID.
+func (c *AxonFlowClient) GetDynamicPolicy(id string) (*DynamicPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Getting dynamic policy: %s", id)
+	}
+
+	var policy DynamicPolicy
+	if err := c.policyRequest("GET", "/api/v1/policies/"+id, nil, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// CreateDynamicPolicy creates a new dynamic policy.
+func (c *AxonFlowClient) CreateDynamicPolicy(req *CreateDynamicPolicyRequest) (*DynamicPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Creating dynamic policy: %s", req.Name)
+	}
+
+	var policy DynamicPolicy
+	if err := c.policyRequest("POST", "/api/v1/policies", req, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// UpdateDynamicPolicy updates an existing dynamic policy.
+func (c *AxonFlowClient) UpdateDynamicPolicy(id string, req *UpdateDynamicPolicyRequest) (*DynamicPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Updating dynamic policy: %s", id)
+	}
+
+	var policy DynamicPolicy
+	if err := c.policyRequest("PUT", "/api/v1/policies/"+id, req, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// DeleteDynamicPolicy deletes a dynamic policy.
+func (c *AxonFlowClient) DeleteDynamicPolicy(id string) error {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Deleting dynamic policy: %s", id)
+	}
+
+	return c.policyRequest("DELETE", "/api/v1/policies/"+id, nil, nil)
+}
+
+// ToggleDynamicPolicy toggles a dynamic policy's enabled status.
+func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicPolicy, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Toggling dynamic policy: %s (enabled=%v)", id, enabled)
+	}
+
+	body := map[string]bool{"enabled": enabled}
+	var policy DynamicPolicy
+	if err := c.policyRequest("PATCH", "/api/v1/policies/"+id, body, &policy); err != nil {
+		return nil, err
+	}
+
+	return &policy, nil
+}
+
+// GetEffectiveDynamicPolicies gets effective dynamic policies with tier inheritance applied.
+func (c *AxonFlowClient) GetEffectiveDynamicPolicies(options *EffectivePoliciesOptions) ([]DynamicPolicy, error) {
+	path := "/api/v1/policies/effective"
+	if options != nil {
+		path += options.buildQueryParams()
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Getting effective dynamic policies: %s", path)
+	}
+
+	var policies []DynamicPolicy
+	if err := c.policyRequest("GET", path, nil, &policies); err != nil {
+		return nil, err
+	}
+
+	return policies, nil
+}
