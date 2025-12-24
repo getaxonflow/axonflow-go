@@ -65,6 +65,16 @@ const (
 	ActionAllow  PolicyAction = "allow"
 )
 
+// PolicySeverity represents policy severity levels
+type PolicySeverity string
+
+const (
+	SeverityCritical PolicySeverity = "critical"
+	SeverityHigh     PolicySeverity = "high"
+	SeverityMedium   PolicySeverity = "medium"
+	SeverityLow      PolicySeverity = "low"
+)
+
 // ============================================================================
 // Static Policy Types
 // ============================================================================
@@ -77,7 +87,7 @@ type StaticPolicy struct {
 	Category       PolicyCategory `json:"category"`
 	Tier           PolicyTier     `json:"tier"`
 	Pattern        string         `json:"pattern"`
-	Severity       int            `json:"severity"`
+	Severity       PolicySeverity `json:"severity"`
 	Enabled        bool           `json:"enabled"`
 	Action         PolicyAction   `json:"action"`
 	OrganizationID *string        `json:"organization_id,omitempty"`
@@ -117,8 +127,9 @@ type CreateStaticPolicyRequest struct {
 	Name        string         `json:"name"`
 	Description string         `json:"description,omitempty"`
 	Category    PolicyCategory `json:"category"`
+	Tier        PolicyTier     `json:"tier,omitempty"`
 	Pattern     string         `json:"pattern"`
-	Severity    int            `json:"severity,omitempty"`
+	Severity    PolicySeverity `json:"severity,omitempty"`
 	Enabled     bool           `json:"enabled"`
 	Action      PolicyAction   `json:"action,omitempty"`
 }
@@ -129,7 +140,7 @@ type UpdateStaticPolicyRequest struct {
 	Description *string         `json:"description,omitempty"`
 	Category    *PolicyCategory `json:"category,omitempty"`
 	Pattern     *string         `json:"pattern,omitempty"`
-	Severity    *int            `json:"severity,omitempty"`
+	Severity    *PolicySeverity `json:"severity,omitempty"`
 	Enabled     *bool           `json:"enabled,omitempty"`
 	Action      *PolicyAction   `json:"action,omitempty"`
 }
@@ -215,7 +226,9 @@ type UpdateDynamicPolicyRequest struct {
 type TestPatternResult struct {
 	Valid   bool               `json:"valid"`
 	Error   string             `json:"error,omitempty"`
-	Results []TestPatternMatch `json:"results"`
+	Pattern string             `json:"pattern"`
+	Inputs  []string           `json:"inputs"`
+	Matches []TestPatternMatch `json:"matches"`
 }
 
 // TestPatternMatch represents an individual pattern match result
@@ -280,6 +293,11 @@ func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, re
 		if c.config.LicenseKey != "" {
 			req.Header.Set("X-License-Key", c.config.LicenseKey)
 		}
+	}
+
+	// Always set tenant ID for policy APIs (uses ClientID as tenant)
+	if c.config.ClientID != "" {
+		req.Header.Set("X-Tenant-ID", c.config.ClientID)
 	}
 
 	if c.config.Debug {
@@ -412,6 +430,11 @@ func (o *EffectivePoliciesOptions) buildQueryParams() string {
 // Static Policy Methods
 // ============================================================================
 
+// staticPoliciesResponse wraps the list static policies API response
+type staticPoliciesResponse struct {
+	Policies []StaticPolicy `json:"policies"`
+}
+
 // ListStaticPolicies lists all static policies with optional filtering.
 func (c *AxonFlowClient) ListStaticPolicies(options *ListStaticPoliciesOptions) ([]StaticPolicy, error) {
 	path := "/api/v1/static-policies"
@@ -423,12 +446,12 @@ func (c *AxonFlowClient) ListStaticPolicies(options *ListStaticPoliciesOptions) 
 		log.Printf("[AxonFlow] Listing static policies: %s", path)
 	}
 
-	var policies []StaticPolicy
-	if err := c.policyRequest("GET", path, nil, &policies); err != nil {
+	var response staticPoliciesResponse
+	if err := c.policyRequest("GET", path, nil, &response); err != nil {
 		return nil, err
 	}
 
-	return policies, nil
+	return response.Policies, nil
 }
 
 // GetStaticPolicy gets a specific static policy by ID.
@@ -449,6 +472,11 @@ func (c *AxonFlowClient) GetStaticPolicy(id string) (*StaticPolicy, error) {
 func (c *AxonFlowClient) CreateStaticPolicy(req *CreateStaticPolicyRequest) (*StaticPolicy, error) {
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Creating static policy: %s", req.Name)
+	}
+
+	// Set default tier if not specified
+	if req.Tier == "" {
+		req.Tier = TierTenant
 	}
 
 	var policy StaticPolicy
@@ -497,6 +525,12 @@ func (c *AxonFlowClient) ToggleStaticPolicy(id string, enabled bool) (*StaticPol
 	return &policy, nil
 }
 
+// effectivePoliciesResponse wraps the effective policies API response
+type effectivePoliciesResponse struct {
+	Static  []StaticPolicy  `json:"static"`
+	Dynamic []DynamicPolicy `json:"dynamic"`
+}
+
 // GetEffectiveStaticPolicies gets effective static policies with tier inheritance applied.
 func (c *AxonFlowClient) GetEffectiveStaticPolicies(options *EffectivePoliciesOptions) ([]StaticPolicy, error) {
 	path := "/api/v1/static-policies/effective"
@@ -508,12 +542,12 @@ func (c *AxonFlowClient) GetEffectiveStaticPolicies(options *EffectivePoliciesOp
 		log.Printf("[AxonFlow] Getting effective static policies: %s", path)
 	}
 
-	var policies []StaticPolicy
-	if err := c.policyRequest("GET", path, nil, &policies); err != nil {
+	var response effectivePoliciesResponse
+	if err := c.policyRequest("GET", path, nil, &response); err != nil {
 		return nil, err
 	}
 
-	return policies, nil
+	return response.Static, nil
 }
 
 // TestPattern tests a regex pattern against sample inputs.
@@ -523,8 +557,8 @@ func (c *AxonFlowClient) TestPattern(pattern string, testInputs []string) (*Test
 	}
 
 	body := map[string]interface{}{
-		"pattern":     pattern,
-		"test_inputs": testInputs,
+		"pattern": pattern,
+		"inputs":  testInputs,
 	}
 
 	var result TestPatternResult
