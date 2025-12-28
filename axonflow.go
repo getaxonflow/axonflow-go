@@ -87,14 +87,14 @@ type PolicyEvaluationInfo struct {
 
 // CodeArtifact represents metadata for LLM-generated code detection
 type CodeArtifact struct {
-	IsCodeOutput    bool     `json:"is_code_output"`    // Whether response contains code
-	Language        string   `json:"language"`          // Detected programming language
-	CodeType        string   `json:"code_type"`         // Code category (function, class, script, etc.)
-	SizeBytes       int      `json:"size_bytes"`        // Size of detected code in bytes
-	LineCount       int      `json:"line_count"`        // Number of lines of code
-	SecretsDetected int      `json:"secrets_detected"`  // Count of potential secrets found
-	UnsafePatterns  int      `json:"unsafe_patterns"`   // Count of unsafe code patterns
-	PoliciesChecked []string `json:"policies_checked"`  // Code governance policies evaluated
+	IsCodeOutput    bool     `json:"is_code_output"`   // Whether response contains code
+	Language        string   `json:"language"`         // Detected programming language
+	CodeType        string   `json:"code_type"`        // Code category (function, class, script, etc.)
+	SizeBytes       int      `json:"size_bytes"`       // Size of detected code in bytes
+	LineCount       int      `json:"line_count"`       // Number of lines of code
+	SecretsDetected int      `json:"secrets_detected"` // Count of potential secrets found
+	UnsafePatterns  int      `json:"unsafe_patterns"`  // Count of unsafe code patterns
+	PoliciesChecked []string `json:"policies_checked"` // Code governance policies evaluated
 }
 
 // ConnectorMetadata represents information about an MCP connector
