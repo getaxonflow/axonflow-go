@@ -5,6 +5,17 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2025-12-28
+
+### Added
+
+- **HITL Support**: `ActionRequireApproval` for human oversight policies
+  - Use with `CreateStaticPolicy()` to trigger approval workflows
+  - Enterprise: Full HITL queue integration
+  - Community: Auto-approves immediately
+
+---
+
 ## [1.7.0] - 2025-12-28
 
 ### Added
