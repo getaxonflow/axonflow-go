@@ -45,24 +45,37 @@ const (
 )
 
 // OverrideAction represents the action to take for policy overrides
+// - block: Immediately block the request
+// - require_approval: Pause for human approval (HITL)
+// - redact: Mask sensitive content
+// - warn: Log warning, allow request
+// - log: Audit only
 type OverrideAction string
 
 const (
-	OverrideActionBlock  OverrideAction = "block"
-	OverrideActionWarn   OverrideAction = "warn"
-	OverrideActionLog    OverrideAction = "log"
-	OverrideActionRedact OverrideAction = "redact"
+	OverrideActionBlock           OverrideAction = "block"
+	OverrideActionRequireApproval OverrideAction = "require_approval"
+	OverrideActionRedact          OverrideAction = "redact"
+	OverrideActionWarn            OverrideAction = "warn"
+	OverrideActionLog             OverrideAction = "log"
 )
 
 // PolicyAction represents the action to take when a policy matches
+// - block: Immediately block the request
+// - require_approval: Pause for human approval (HITL)
+// - redact: Mask sensitive content
+// - warn: Log warning, allow request
+// - log: Audit only
+// - allow: Explicitly allow (for overrides)
 type PolicyAction string
 
 const (
-	ActionBlock  PolicyAction = "block"
-	ActionWarn   PolicyAction = "warn"
-	ActionLog    PolicyAction = "log"
-	ActionRedact PolicyAction = "redact"
-	ActionAllow  PolicyAction = "allow"
+	ActionBlock           PolicyAction = "block"
+	ActionRequireApproval PolicyAction = "require_approval"
+	ActionRedact          PolicyAction = "redact"
+	ActionWarn            PolicyAction = "warn"
+	ActionLog             PolicyAction = "log"
+	ActionAllow           PolicyAction = "allow"
 )
 
 // PolicySeverity represents policy severity levels
