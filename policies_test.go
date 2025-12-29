@@ -342,12 +342,16 @@ func TestGetStaticPolicyVersions(t *testing.T) {
 		if r.URL.Path != "/api/v1/static-policies/pol_123/versions" {
 			t.Errorf("Expected path /api/v1/static-policies/pol_123/versions, got %s", r.URL.Path)
 		}
-		versions := []PolicyVersion{
-			{Version: 2, ChangeType: "updated", ChangedAt: time.Now()},
-			{Version: 1, ChangeType: "created", ChangedAt: time.Now()},
+		response := map[string]interface{}{
+			"policy_id": "pol_123",
+			"versions": []PolicyVersion{
+				{Version: 2, ChangeType: "updated", ChangedAt: time.Now()},
+				{Version: 1, ChangeType: "created", ChangedAt: time.Now()},
+			},
+			"count": 2,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(versions)
+		json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
