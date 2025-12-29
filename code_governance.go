@@ -420,10 +420,10 @@ func (o *ExportOptions) buildQueryParams() string {
 // Metrics and Export Methods
 // ============================================================================
 
-// GetMetrics returns aggregated code governance metrics for the tenant.
+// GetCodeGovernanceMetrics returns aggregated code governance metrics for the tenant.
 // This provides compliance dashboard data including PR counts, file totals,
 // and security findings (secrets detected, unsafe patterns).
-func (c *AxonFlowClient) GetMetrics() (*CodeGovernanceMetrics, error) {
+func (c *AxonFlowClient) GetCodeGovernanceMetrics() (*CodeGovernanceMetrics, error) {
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Getting code governance metrics")
 	}
@@ -436,10 +436,10 @@ func (c *AxonFlowClient) GetMetrics() (*CodeGovernanceMetrics, error) {
 	return &resp, nil
 }
 
-// ExportData exports code governance data for compliance reporting.
+// ExportCodeGovernanceData exports code governance data for compliance reporting.
 // Supports JSON and CSV formats with optional date filtering.
-// For CSV format, use ExportDataRaw which returns []byte.
-func (c *AxonFlowClient) ExportData(options *ExportOptions) (*ExportResponse, error) {
+// For CSV format, use ExportCodeGovernanceDataCSV which returns []byte.
+func (c *AxonFlowClient) ExportCodeGovernanceData(options *ExportOptions) (*ExportResponse, error) {
 	path := "/api/v1/code-governance/export"
 	if options != nil {
 		// Force JSON format for structured response
@@ -460,9 +460,9 @@ func (c *AxonFlowClient) ExportData(options *ExportOptions) (*ExportResponse, er
 	return &resp, nil
 }
 
-// ExportDataCSV exports code governance data as CSV.
+// ExportCodeGovernanceDataCSV exports code governance data as CSV.
 // Returns the raw CSV bytes suitable for saving to file or streaming.
-func (c *AxonFlowClient) ExportDataCSV(options *ExportOptions) ([]byte, error) {
+func (c *AxonFlowClient) ExportCodeGovernanceDataCSV(options *ExportOptions) ([]byte, error) {
 	path := "/api/v1/code-governance/export?format=csv"
 	if options != nil {
 		opts := *options
