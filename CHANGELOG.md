@@ -5,6 +5,26 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2025-12-29
+
+### Added
+
+- **Enterprise Policy Features**:
+  - `OrganizationID` field in `CreateStaticPolicyRequest` for organization-tier policies
+  - `OrganizationID` field in `ListStaticPoliciesOptions` for filtering by organization
+  - `ListPolicyOverrides()` method to list all active policy overrides
+
+- **Type Aliases** (for backward compatibility with existing code):
+  - `ListStaticPoliciesRequest` = `ListStaticPoliciesOptions`
+  - `CreateOverrideRequest` = `CreatePolicyOverrideRequest`
+  - `GetEffectiveRequest` = `EffectivePoliciesOptions`
+
+- **TestPatternResult Improvements**:
+  - `Results` field as alias for `Matches`
+  - `GetResults()` method for convenience
+
+---
+
 ## [1.10.0] - 2025-12-29
 
 ### Added

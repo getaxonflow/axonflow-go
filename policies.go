@@ -125,26 +125,31 @@ type PolicyOverride struct {
 
 // ListStaticPoliciesOptions represents options for listing static policies
 type ListStaticPoliciesOptions struct {
-	Category  PolicyCategory
-	Tier      PolicyTier
-	Enabled   *bool
-	Limit     int
-	Offset    int
-	SortBy    string
-	SortOrder string
-	Search    string
+	Category       PolicyCategory
+	Tier           PolicyTier
+	OrganizationID string // Filter by organization ID (Enterprise)
+	Enabled        *bool
+	Limit          int
+	Offset         int
+	SortBy         string
+	SortOrder      string
+	Search         string
 }
+
+// ListStaticPoliciesRequest is an alias for ListStaticPoliciesOptions for backward compatibility
+type ListStaticPoliciesRequest = ListStaticPoliciesOptions
 
 // CreateStaticPolicyRequest represents a request to create a new static policy
 type CreateStaticPolicyRequest struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description,omitempty"`
-	Category    PolicyCategory `json:"category"`
-	Tier        PolicyTier     `json:"tier,omitempty"`
-	Pattern     string         `json:"pattern"`
-	Severity    PolicySeverity `json:"severity,omitempty"`
-	Enabled     bool           `json:"enabled"`
-	Action      PolicyAction   `json:"action,omitempty"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description,omitempty"`
+	Category       PolicyCategory `json:"category"`
+	Tier           PolicyTier     `json:"tier,omitempty"`
+	OrganizationID string         `json:"organization_id,omitempty"` // Organization ID for organization-tier policies (Enterprise)
+	Pattern        string         `json:"pattern"`
+	Severity       PolicySeverity `json:"severity,omitempty"`
+	Enabled        bool           `json:"enabled"`
+	Action         PolicyAction   `json:"action,omitempty"`
 }
 
 // UpdateStaticPolicyRequest represents a request to update an existing static policy
@@ -164,6 +169,9 @@ type CreatePolicyOverrideRequest struct {
 	Reason    string         `json:"reason"`
 	ExpiresAt *time.Time     `json:"expires_at,omitempty"`
 }
+
+// CreateOverrideRequest is an alias for CreatePolicyOverrideRequest for backward compatibility
+type CreateOverrideRequest = CreatePolicyOverrideRequest
 
 // ============================================================================
 // Dynamic Policy Types
@@ -242,6 +250,12 @@ type TestPatternResult struct {
 	Pattern string             `json:"pattern"`
 	Inputs  []string           `json:"inputs"`
 	Matches []TestPatternMatch `json:"matches"`
+	Results []TestPatternMatch `json:"-"` // Alias for Matches for backward compatibility
+}
+
+// GetResults returns the pattern match results (alias for Matches)
+func (r *TestPatternResult) GetResults() []TestPatternMatch {
+	return r.Matches
 }
 
 // TestPatternMatch represents an individual pattern match result
@@ -273,6 +287,9 @@ type EffectivePoliciesOptions struct {
 	IncludeDisabled   bool
 	IncludeOverridden bool
 }
+
+// GetEffectiveRequest is an alias for EffectivePoliciesOptions for backward compatibility
+type GetEffectiveRequest = EffectivePoliciesOptions
 
 // ============================================================================
 // HTTP Helper for Policy Requests
@@ -406,6 +423,9 @@ func (o *ListStaticPoliciesOptions) buildQueryParams() string {
 	}
 	if o.Tier != "" {
 		params.Set("tier", string(o.Tier))
+	}
+	if o.OrganizationID != "" {
+		params.Set("organization_id", o.OrganizationID)
 	}
 	if o.Enabled != nil {
 		if *o.Enabled {
@@ -670,6 +690,20 @@ func (c *AxonFlowClient) DeletePolicyOverride(policyID string) error {
 	}
 
 	return c.policyRequest("DELETE", "/api/v1/static-policies/"+policyID+"/override", nil, nil)
+}
+
+// ListPolicyOverrides lists all active policy overrides (Enterprise).
+func (c *AxonFlowClient) ListPolicyOverrides() ([]PolicyOverride, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Listing policy overrides")
+	}
+
+	var overrides []PolicyOverride
+	err := c.policyRequest("GET", "/api/v1/static-policies/overrides", nil, &overrides)
+	if err != nil {
+		return nil, err
+	}
+	return overrides, nil
 }
 
 // ============================================================================
