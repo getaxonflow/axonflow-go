@@ -657,12 +657,16 @@ func (c *AxonFlowClient) GetStaticPolicyVersions(id string) ([]PolicyVersion, er
 		log.Printf("[AxonFlow] Getting static policy versions: %s", id)
 	}
 
-	var versions []PolicyVersion
-	if err := c.policyRequest("GET", "/api/v1/static-policies/"+id+"/versions", nil, &versions); err != nil {
+	var response struct {
+		PolicyID string          `json:"policy_id"`
+		Versions []PolicyVersion `json:"versions"`
+		Count    int             `json:"count"`
+	}
+	if err := c.policyRequest("GET", "/api/v1/static-policies/"+id+"/versions", nil, &response); err != nil {
 		return nil, err
 	}
 
-	return versions, nil
+	return response.Versions, nil
 }
 
 // ============================================================================
