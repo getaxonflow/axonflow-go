@@ -165,8 +165,8 @@ type UpdateStaticPolicyRequest struct {
 
 // CreatePolicyOverrideRequest represents a request to create a policy override
 type CreatePolicyOverrideRequest struct {
-	Action    OverrideAction `json:"action"`
-	Reason    string         `json:"reason"`
+	Action    OverrideAction `json:"action_override"`
+	Reason    string         `json:"override_reason"`
 	ExpiresAt *time.Time     `json:"expires_at,omitempty"`
 }
 
