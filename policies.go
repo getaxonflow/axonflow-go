@@ -349,6 +349,55 @@ func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, re
 	return nil
 }
 
+// policyRequestRaw makes an HTTP request and returns raw bytes (for CSV export)
+func (c *AxonFlowClient) policyRequestRaw(method, path string) ([]byte, error) {
+	fullURL := c.config.AgentURL + path
+
+	req, err := http.NewRequest(method, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Skip auth headers for localhost (self-hosted mode)
+	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") ||
+		strings.Contains(c.config.AgentURL, "127.0.0.1")
+	if !isLocalhost {
+		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
+		if c.config.LicenseKey != "" {
+			req.Header.Set("X-License-Key", c.config.LicenseKey)
+		}
+	}
+
+	// Always set tenant ID for policy APIs (uses ClientID as tenant)
+	if c.config.ClientID != "" {
+		req.Header.Set("X-Tenant-ID", c.config.ClientID)
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Raw policy request: %s %s", method, path)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(respBody),
+		}
+	}
+
+	return respBody, nil
+}
+
 // buildQueryParams builds query parameters from options
 func (o *ListStaticPoliciesOptions) buildQueryParams() string {
 	params := url.Values{}

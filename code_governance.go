@@ -344,3 +344,135 @@ func (c *AxonFlowClient) SyncPRStatus(prID string) (*PRRecord, error) {
 
 	return &resp, nil
 }
+
+// ============================================================================
+// Metrics and Export Types
+// ============================================================================
+
+// CodeGovernanceMetrics contains aggregated metrics for code governance
+type CodeGovernanceMetrics struct {
+	// TenantID is the tenant identifier
+	TenantID string `json:"tenant_id"`
+	// TotalPRs is the total number of PRs created
+	TotalPRs int `json:"total_prs"`
+	// OpenPRs is the number of open PRs
+	OpenPRs int `json:"open_prs"`
+	// MergedPRs is the number of merged PRs
+	MergedPRs int `json:"merged_prs"`
+	// ClosedPRs is the number of closed (not merged) PRs
+	ClosedPRs int `json:"closed_prs"`
+	// TotalFiles is the total number of files modified across all PRs
+	TotalFiles int `json:"total_files"`
+	// TotalSecretsDetected is the total secrets detected across all PRs
+	TotalSecretsDetected int `json:"total_secrets_detected"`
+	// TotalUnsafePatterns is the total unsafe patterns detected
+	TotalUnsafePatterns int `json:"total_unsafe_patterns"`
+	// FirstPRAt is the timestamp of the first PR (nil if no PRs)
+	FirstPRAt *time.Time `json:"first_pr_at,omitempty"`
+	// LastPRAt is the timestamp of the most recent PR
+	LastPRAt *time.Time `json:"last_pr_at,omitempty"`
+}
+
+// ExportOptions contains options for exporting code governance data
+type ExportOptions struct {
+	// Format is the export format: "json" or "csv"
+	Format string
+	// StartDate filters PRs created on or after this date
+	StartDate *time.Time
+	// EndDate filters PRs created on or before this date
+	EndDate *time.Time
+	// State filters by PR state: open, merged, closed
+	State string
+}
+
+// ExportResponse represents the export result (JSON format)
+type ExportResponse struct {
+	// Records is the list of PR records
+	Records []PRRecord `json:"records"`
+	// Count is the number of records
+	Count int `json:"count"`
+	// ExportedAt is when the export was generated
+	ExportedAt string `json:"exported_at"`
+}
+
+// buildQueryParams builds query parameters for ExportOptions
+func (o *ExportOptions) buildQueryParams() string {
+	params := url.Values{}
+	if o.Format != "" {
+		params.Set("format", o.Format)
+	}
+	if o.StartDate != nil {
+		params.Set("start_date", o.StartDate.Format(time.RFC3339))
+	}
+	if o.EndDate != nil {
+		params.Set("end_date", o.EndDate.Format(time.RFC3339))
+	}
+	if o.State != "" {
+		params.Set("state", o.State)
+	}
+	if encoded := params.Encode(); encoded != "" {
+		return "?" + encoded
+	}
+	return ""
+}
+
+// ============================================================================
+// Metrics and Export Methods
+// ============================================================================
+
+// GetCodeGovernanceMetrics returns aggregated code governance metrics for the tenant.
+// This provides compliance dashboard data including PR counts, file totals,
+// and security findings (secrets detected, unsafe patterns).
+func (c *AxonFlowClient) GetCodeGovernanceMetrics() (*CodeGovernanceMetrics, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Getting code governance metrics")
+	}
+
+	var resp CodeGovernanceMetrics
+	if err := c.policyRequest("GET", "/api/v1/code-governance/metrics", nil, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+// ExportCodeGovernanceData exports code governance data for compliance reporting.
+// Supports JSON and CSV formats with optional date filtering.
+// For CSV format, use ExportCodeGovernanceDataCSV which returns []byte.
+func (c *AxonFlowClient) ExportCodeGovernanceData(options *ExportOptions) (*ExportResponse, error) {
+	path := "/api/v1/code-governance/export"
+	if options != nil {
+		// Force JSON format for structured response
+		opts := *options
+		opts.Format = "json"
+		path += opts.buildQueryParams()
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Exporting code governance data: %s", path)
+	}
+
+	var resp ExportResponse
+	if err := c.policyRequest("GET", path, nil, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+// ExportCodeGovernanceDataCSV exports code governance data as CSV.
+// Returns the raw CSV bytes suitable for saving to file or streaming.
+func (c *AxonFlowClient) ExportCodeGovernanceDataCSV(options *ExportOptions) ([]byte, error) {
+	path := "/api/v1/code-governance/export?format=csv"
+	if options != nil {
+		opts := *options
+		opts.Format = "csv"
+		path = "/api/v1/code-governance/export" + opts.buildQueryParams()
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Exporting code governance data as CSV: %s", path)
+	}
+
+	return c.policyRequestRaw("GET", path)
+}
