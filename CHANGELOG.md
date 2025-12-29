@@ -5,6 +5,18 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2025-12-30
+
+### Fixed
+
+- Fixed JSON field names for `PolicyOverride` types to match API schema (`action_override`, `override_reason`)
+- Fixed `ListPolicyOverrides()` to correctly parse wrapped response format
+- Fixed `GetStaticPolicyVersions()` to correctly parse wrapped response format
+
+> **Note:** These changes affect Enterprise users only. Community users can skip this release.
+
+---
+
 ## [1.11.0] - 2025-12-29
 
 ### Added
