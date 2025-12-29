@@ -5,6 +5,29 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2025-12-29
+
+### Added
+
+- **Code Governance Git Provider APIs** (Enterprise): Create PRs from LLM-generated code
+  - `ValidateGitProvider()` - Validate credentials before saving
+  - `ConfigureGitProvider()` - Configure GitHub, GitLab, or Bitbucket
+  - `ListGitProviders()` - List configured providers
+  - `DeleteGitProvider()` - Remove a provider
+  - `CreatePR()` - Create PR from generated code with audit trail
+  - `ListPRs()` - List PRs with filtering
+  - `GetPR()` - Get PR details
+  - `SyncPRStatus()` - Sync status from Git provider
+
+- **New Types**: `GitProviderType`, `FileAction`, `CodeFile`, `CreatePRRequest`, `CreatePRResponse`, `PRRecord`, `ListPRsOptions`, `ListPRsResponse`
+
+- **Supported Git Providers**:
+  - GitHub (Cloud and Enterprise Server)
+  - GitLab (Cloud and Self-Managed)
+  - Bitbucket (Cloud and Server/Data Center)
+
+---
+
 ## [1.8.0] - 2025-12-28
 
 ### Added
