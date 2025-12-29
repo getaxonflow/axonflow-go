@@ -115,8 +115,8 @@ type StaticPolicy struct {
 // PolicyOverride represents an override for a static policy
 type PolicyOverride struct {
 	PolicyID  string         `json:"policy_id"`
-	Action    OverrideAction `json:"action"`
-	Reason    string         `json:"reason"`
+	Action    OverrideAction `json:"action_override"`
+	Reason    string         `json:"override_reason"`
 	CreatedBy string         `json:"created_by,omitempty"`
 	CreatedAt time.Time      `json:"created_at"`
 	ExpiresAt *time.Time     `json:"expires_at,omitempty"`
@@ -702,12 +702,15 @@ func (c *AxonFlowClient) ListPolicyOverrides() ([]PolicyOverride, error) {
 		log.Printf("[AxonFlow] Listing policy overrides")
 	}
 
-	var overrides []PolicyOverride
-	err := c.policyRequest("GET", "/api/v1/static-policies/overrides", nil, &overrides)
+	var response struct {
+		Overrides []PolicyOverride `json:"overrides"`
+		Count     int              `json:"count"`
+	}
+	err := c.policyRequest("GET", "/api/v1/static-policies/overrides", nil, &response)
 	if err != nil {
 		return nil, err
 	}
-	return overrides, nil
+	return response.Overrides, nil
 }
 
 // ============================================================================
