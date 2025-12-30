@@ -5,6 +5,17 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2025-12-30
+
+### Fixed
+
+- **403 Forbidden Handling**: Properly handle HTTP 403 responses for blocked requests
+  - Agent returns 403 when requests are blocked by policy
+  - Previously this triggered retry logic and fail-open, causing blocked requests to appear allowed
+  - Now correctly parses 403 response body and returns `Blocked=true` with proper `BlockReason`
+
+---
+
 ## [1.13.0] - 2025-12-30
 
 ### Changed
