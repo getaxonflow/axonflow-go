@@ -518,6 +518,16 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 		log.Printf("[SDK-DEBUG] Raw response body (first 500 chars): %s...", string(body[:500]))
 	}
 
+	// For 403 (Forbidden), the request was blocked by policy - parse the response body
+	if resp.StatusCode == http.StatusForbidden {
+		var clientResp ClientResponse
+		if err := json.Unmarshal(body, &clientResp); err != nil {
+			return nil, fmt.Errorf("failed to parse blocked response: %w", err)
+		}
+		// The response contains blocked=true and block_reason from the agent
+		return &clientResp, nil
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, &httpError{
 			statusCode: resp.StatusCode,
@@ -527,8 +537,6 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 
 	var clientResp ClientResponse
 	if err := json.Unmarshal(body, &clientResp); err != nil {
-		log.Printf("[SDK-DEBUG] Unmarshal error: %v", err)
-		log.Printf("[SDK-DEBUG] Body that failed to unmarshal: %s", string(body))
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
@@ -574,8 +582,8 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 	}
 
 	// [DEBUG] Log unmarshaled response details
-	log.Printf("[SDK-DEBUG] Unmarshaled - Success: %v, Result length: %d, PlanID: %s",
-		clientResp.Success, len(clientResp.Result), clientResp.PlanID)
+	log.Printf("[SDK-DEBUG] Unmarshaled - Success: %v, Blocked: %v, BlockReason: %s, Result length: %d, PlanID: %s",
+		clientResp.Success, clientResp.Blocked, clientResp.BlockReason, len(clientResp.Result), clientResp.PlanID)
 	if len(clientResp.Result) > 0 {
 		if len(clientResp.Result) <= 100 {
 			log.Printf("[SDK-DEBUG] Result (full): %s", clientResp.Result)
