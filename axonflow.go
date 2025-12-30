@@ -21,9 +21,9 @@ import (
 // AxonFlowConfig represents configuration for the AxonFlow client
 type AxonFlowConfig struct {
 	AgentURL     string        // Required: AxonFlow Agent URL
-	ClientID     string        // Required: Client ID for authentication
-	ClientSecret string        // Required: Client secret for authentication
-	LicenseKey   string        // Required: AxonFlow license key for agent authentication
+	ClientID     string        // Optional: Client ID (required for enterprise features)
+	ClientSecret string        // Optional: Client secret (required for enterprise features)
+	LicenseKey   string        // Optional: License key (alternative to ClientID/ClientSecret)
 	Mode         string        // "production" | "sandbox" (default: "production")
 	Debug        bool          // Enable debug logging (default: false)
 	Timeout      time.Duration // Request timeout (default: 60s)
@@ -483,13 +483,13 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
+	// Add auth headers only when credentials are provided
+	// Community/self-hosted mode works without credentials
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
+	if c.config.ClientSecret != "" {
 		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
 	}
 
 	if c.config.Debug {
@@ -678,13 +678,13 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
+	// Add auth headers only when credentials are provided
+	// Community/self-hosted mode works without credentials
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
+	if c.config.ClientSecret != "" {
 		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
 	}
 
 	resp, err := c.httpClient.Do(httpReq)
@@ -797,13 +797,13 @@ func (c *AxonFlowClient) executeMapRequest(req ClientRequest) (*ClientResponse, 
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
+	// Add auth headers only when credentials are provided
+	// Community/self-hosted mode works without credentials
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
+	if c.config.ClientSecret != "" {
 		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
 	}
 
 	if c.config.Debug {
@@ -1003,12 +1003,27 @@ func (c *AxonFlowClient) PreCheck(
 //
 //	// Audit the call
 //	client.AuditLLMCall(ctx.ContextID, "summary", "openai", "gpt-4", tokenUsage, latencyMs, nil)
+
+// requireCredentials checks if credentials are configured and returns an error if not.
+// Enterprise features like Gateway Mode require authentication.
+func (c *AxonFlowClient) requireCredentials(feature string) error {
+	if c.config.LicenseKey == "" && c.config.ClientSecret == "" {
+		return fmt.Errorf("%s requires credentials. Set LicenseKey or ClientID/ClientSecret", feature)
+	}
+	return nil
+}
+
 func (c *AxonFlowClient) GetPolicyApprovedContext(
 	userToken string,
 	query string,
 	dataSources []string,
 	context map[string]interface{},
 ) (*PolicyApprovalResult, error) {
+	// Gateway Mode requires credentials (enterprise feature)
+	if err := c.requireCredentials("Gateway Mode (GetPolicyApprovedContext)"); err != nil {
+		return nil, err
+	}
+
 	if dataSources == nil {
 		dataSources = []string{}
 	}
@@ -1036,13 +1051,13 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
+	// Add auth headers only when credentials are provided
+	// Community/self-hosted mode works without credentials
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
+	if c.config.ClientSecret != "" {
 		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
 	}
 
 	if c.config.Debug {
@@ -1151,6 +1166,11 @@ func (c *AxonFlowClient) AuditLLMCall(
 	latencyMs int64,
 	metadata map[string]interface{},
 ) (*AuditResult, error) {
+	// Gateway Mode requires credentials (enterprise feature)
+	if err := c.requireCredentials("Gateway Mode (AuditLLMCall)"); err != nil {
+		return nil, err
+	}
+
 	if metadata == nil {
 		metadata = map[string]interface{}{}
 	}
@@ -1182,13 +1202,13 @@ func (c *AxonFlowClient) AuditLLMCall(
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") || strings.Contains(c.config.AgentURL, "127.0.0.1")
-	if !isLocalhost {
+	// Add auth headers only when credentials are provided
+	// Community/self-hosted mode works without credentials
+	if c.config.LicenseKey != "" {
+		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
+	if c.config.ClientSecret != "" {
 		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
 	}
 
 	if c.config.Debug {

@@ -433,9 +433,10 @@ func TestGetPolicyApprovedContext(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Debug:    true,
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	result, err := client.GetPolicyApprovedContext("user-123", "test query", []string{"postgres"}, nil)
@@ -472,8 +473,9 @@ func TestGetPolicyApprovedContextBlocked(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
 	})
 
 	result, err := client.GetPolicyApprovedContext("user", "SSN: 123-45-6789", nil, nil)
@@ -510,8 +512,9 @@ func TestGetPolicyApprovedContextWithRateLimit(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
 	})
 
 	result, err := client.GetPolicyApprovedContext("user", "query", nil, nil)
@@ -547,8 +550,9 @@ func TestPreCheck(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
 	})
 
 	result, err := client.PreCheck("user", "query", nil, nil)
@@ -587,9 +591,10 @@ func TestAuditLLMCall(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Debug:    true,
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	result, err := client.AuditLLMCall(
@@ -632,8 +637,9 @@ func TestAuditLLMCallWithNilMetadata(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
 	})
 
 	// Pass nil metadata
@@ -1014,7 +1020,7 @@ func TestRetryWith4xxError(t *testing.T) {
 	}
 }
 
-func TestLocalHostSkipsAuth(t *testing.T) {
+func TestAuthHeadersSentWithCredentials(t *testing.T) {
 	receivedAuthHeader := ""
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedAuthHeader = r.Header.Get("X-Client-Secret")
@@ -1023,7 +1029,7 @@ func TestLocalHostSkipsAuth(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// httptest server URL contains 127.0.0.1, so auth should be skipped
+	// When credentials are provided, auth headers should be sent
 	client := NewClient(AxonFlowConfig{
 		AgentURL:     server.URL,
 		ClientID:     "test",
@@ -1033,9 +1039,9 @@ func TestLocalHostSkipsAuth(t *testing.T) {
 
 	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
 
-	// Auth header should NOT be set for localhost/127.0.0.1 (self-hosted mode)
-	if receivedAuthHeader != "" {
-		t.Errorf("Expected no auth header for localhost, got '%s'", receivedAuthHeader)
+	// Auth header SHOULD be set when credentials are provided
+	if receivedAuthHeader != "secret" {
+		t.Errorf("Expected auth header 'secret', got '%s'", receivedAuthHeader)
 	}
 }
 

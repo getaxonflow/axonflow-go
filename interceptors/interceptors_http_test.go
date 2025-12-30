@@ -593,9 +593,10 @@ func TestWrapGeminiModel_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockModel := &MockGeminiModel{
@@ -637,9 +638,10 @@ func TestWrapGeminiModelWithName(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockModel := &MockGeminiModel{}
@@ -655,10 +657,11 @@ func TestWrapGeminiModel_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Mode:     "sandbox",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Mode:         "sandbox",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockModel := &MockGeminiModel{}
@@ -1027,9 +1030,10 @@ func TestWrapGeminiModel_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockModel := &MockGeminiModel{
@@ -1053,10 +1057,11 @@ func TestWrapGeminiModel_AxonFlowError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Mode:     "sandbox",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Mode:         "sandbox",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockModel := &MockGeminiModel{}
@@ -1073,9 +1078,10 @@ func TestWrapGeminiModel_NilUsageMetadata(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockModel := &MockGeminiModel{
@@ -1150,9 +1156,10 @@ func TestWrapOllamaChatClient_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockClient := &MockOllamaChatClient{
@@ -1187,10 +1194,11 @@ func TestWrapOllamaChatClient_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Mode:     "sandbox",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Mode:         "sandbox",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockClient := &MockOllamaChatClient{}
@@ -1214,9 +1222,10 @@ func TestWrapOllamaChatClient_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	mockClient := &MockOllamaChatClient{
@@ -1242,9 +1251,10 @@ func TestWrapOllamaChatFunc_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	fn := func(ctx context.Context, req *OllamaChatRequest) (*OllamaChatResponse, error) {
@@ -1275,10 +1285,11 @@ func TestWrapOllamaChatFunc_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Mode:     "sandbox",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Mode:         "sandbox",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	called := false
@@ -1307,10 +1318,11 @@ func TestWrapOllamaGenerateFunc_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Mode:     "sandbox",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Mode:         "sandbox",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	called := false
@@ -1339,9 +1351,10 @@ func TestWrapOllamaGenerateFunc_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	fn := func(ctx context.Context, req *OllamaGenerateRequest) (*OllamaGenerateResponse, error) {
@@ -1365,9 +1378,10 @@ func TestWrapOllamaGenerateFunc_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	fn := func(ctx context.Context, req *OllamaGenerateRequest) (*OllamaGenerateResponse, error) {
@@ -1414,9 +1428,10 @@ func TestWrapBedrockInvokeModel_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	fn := func(ctx context.Context, input *BedrockInvokeInput) (*BedrockInvokeOutput, error) {
@@ -1447,10 +1462,11 @@ func TestWrapBedrockInvokeModel_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Mode:     "sandbox",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Mode:         "sandbox",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	called := false
@@ -1480,9 +1496,10 @@ func TestWrapBedrockInvokeModel_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
-		ClientID: "test",
-		Cache:    axonflow.CacheConfig{Enabled: false},
+		AgentURL:     server.URL,
+		ClientID:     "test",
+		ClientSecret: "test-secret",
+		Cache:        axonflow.CacheConfig{Enabled: false},
 	})
 
 	fn := func(ctx context.Context, input *BedrockInvokeInput) (*BedrockInvokeOutput, error) {
