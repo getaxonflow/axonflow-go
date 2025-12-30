@@ -5,6 +5,26 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2025-12-30
+
+### Changed
+
+- **Community Mode**: Credentials are now optional for self-hosted/community deployments
+  - SDK can be initialized without `ClientSecret` or `LicenseKey` for community features
+  - `ExecuteQuery()` and `HealthCheck()` work without credentials
+  - Auth headers are only sent when credentials are configured
+
+### Added
+
+- `requireCredentials()` helper for enterprise feature validation
+- Enterprise features (`GetPolicyApprovedContext`, `AuditLLMCall`) now validate credentials at call time
+
+### Fixed
+
+- Gateway Mode methods now return clear error message when called without credentials
+
+---
+
 ## [1.12.0] - 2025-12-30
 
 ### Fixed
