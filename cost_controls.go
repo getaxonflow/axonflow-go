@@ -14,14 +14,14 @@ import (
 
 // CreateBudgetRequest represents a request to create a new budget
 type CreateBudgetRequest struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Scope           string `json:"scope"`    // organization, team, agent, workflow, user
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	Scope           string  `json:"scope"` // organization, team, agent, workflow, user
 	LimitUSD        float64 `json:"limit_usd"`
-	Period          string `json:"period"`   // daily, weekly, monthly, quarterly, yearly
-	OnExceed        string `json:"on_exceed"` // warn, block, downgrade
-	AlertThresholds []int  `json:"alert_thresholds,omitempty"`
-	ScopeID         string `json:"scope_id,omitempty"`
+	Period          string  `json:"period"`    // daily, weekly, monthly, quarterly, yearly
+	OnExceed        string  `json:"on_exceed"` // warn, block, downgrade
+	AlertThresholds []int   `json:"alert_thresholds,omitempty"`
+	ScopeID         string  `json:"scope_id,omitempty"`
 }
 
 // UpdateBudgetRequest represents a request to update an existing budget
@@ -41,17 +41,17 @@ type ListBudgetsOptions struct {
 
 // Budget represents a budget entity
 type Budget struct {
-	ID              string   `json:"id"`
-	Name            string   `json:"name"`
-	Scope           string   `json:"scope"`
-	LimitUSD        float64  `json:"limit_usd"`
-	Period          string   `json:"period"`
-	OnExceed        string   `json:"on_exceed"`
-	AlertThresholds []int    `json:"alert_thresholds"`
-	Enabled         bool     `json:"enabled"`
-	ScopeID         string   `json:"scope_id,omitempty"`
-	CreatedAt       string   `json:"created_at,omitempty"`
-	UpdatedAt       string   `json:"updated_at,omitempty"`
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	Scope           string  `json:"scope"`
+	LimitUSD        float64 `json:"limit_usd"`
+	Period          string  `json:"period"`
+	OnExceed        string  `json:"on_exceed"`
+	AlertThresholds []int   `json:"alert_thresholds"`
+	Enabled         bool    `json:"enabled"`
+	ScopeID         string  `json:"scope_id,omitempty"`
+	CreatedAt       string  `json:"created_at,omitempty"`
+	UpdatedAt       string  `json:"updated_at,omitempty"`
 }
 
 // BudgetsResponse represents a list of budgets response
