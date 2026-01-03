@@ -20,16 +20,17 @@ import (
 
 // AxonFlowConfig represents configuration for the AxonFlow client
 type AxonFlowConfig struct {
-	AgentURL     string        // Required: AxonFlow Agent URL
-	ClientID     string        // Optional: Client ID (required for enterprise features)
-	ClientSecret string        // Optional: Client secret (required for enterprise features)
-	LicenseKey   string        // Optional: License key (alternative to ClientID/ClientSecret)
-	Mode         string        // "production" | "sandbox" (default: "production")
-	Debug        bool          // Enable debug logging (default: false)
-	Timeout      time.Duration // Request timeout (default: 60s)
-	MapTimeout   time.Duration // Timeout for MAP operations (default: 120s) - MAP involves multiple LLM calls
-	Retry        RetryConfig   // Retry configuration
-	Cache        CacheConfig   // Cache configuration
+	AgentURL        string        // Required: AxonFlow Agent URL
+	OrchestratorURL string        // Optional: Orchestrator URL (for Execution Replay API). Defaults to agent URL with port 8081.
+	ClientID        string        // Optional: Client ID (required for enterprise features)
+	ClientSecret    string        // Optional: Client secret (required for enterprise features)
+	LicenseKey      string        // Optional: License key (alternative to ClientID/ClientSecret)
+	Mode            string        // "production" | "sandbox" (default: "production")
+	Debug           bool          // Enable debug logging (default: false)
+	Timeout         time.Duration // Request timeout (default: 60s)
+	MapTimeout      time.Duration // Timeout for MAP operations (default: 120s) - MAP involves multiple LLM calls
+	Retry           RetryConfig   // Retry configuration
+	Cache           CacheConfig   // Cache configuration
 }
 
 // RetryConfig configures retry behavior
