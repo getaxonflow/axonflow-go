@@ -20,22 +20,22 @@ import (
 
 // ExecutionSummary represents a workflow execution summary
 type ExecutionSummary struct {
-	RequestID      string   `json:"request_id"`
-	WorkflowName   string   `json:"workflow_name"`
-	Status         string   `json:"status"` // "running", "completed", "failed"
-	TotalSteps     int      `json:"total_steps"`
-	CompletedSteps int      `json:"completed_steps"`
-	StartedAt      string   `json:"started_at"`
-	CompletedAt    *string  `json:"completed_at,omitempty"`
-	DurationMs     *int     `json:"duration_ms,omitempty"`
-	TotalTokens    int      `json:"total_tokens"`
-	TotalCostUSD   float64  `json:"total_cost_usd"`
-	OrgID          string   `json:"org_id,omitempty"`
-	TenantID       string   `json:"tenant_id,omitempty"`
-	UserID         string   `json:"user_id,omitempty"`
-	ErrorMessage   string   `json:"error_message,omitempty"`
-	InputSummary   any      `json:"input_summary,omitempty"`
-	OutputSummary  any      `json:"output_summary,omitempty"`
+	RequestID      string  `json:"request_id"`
+	WorkflowName   string  `json:"workflow_name"`
+	Status         string  `json:"status"` // "running", "completed", "failed"
+	TotalSteps     int     `json:"total_steps"`
+	CompletedSteps int     `json:"completed_steps"`
+	StartedAt      string  `json:"started_at"`
+	CompletedAt    *string `json:"completed_at,omitempty"`
+	DurationMs     *int    `json:"duration_ms,omitempty"`
+	TotalTokens    int     `json:"total_tokens"`
+	TotalCostUSD   float64 `json:"total_cost_usd"`
+	OrgID          string  `json:"org_id,omitempty"`
+	TenantID       string  `json:"tenant_id,omitempty"`
+	UserID         string  `json:"user_id,omitempty"`
+	ErrorMessage   string  `json:"error_message,omitempty"`
+	InputSummary   any     `json:"input_summary,omitempty"`
+	OutputSummary  any     `json:"output_summary,omitempty"`
 }
 
 // ExecutionSnapshot represents a step in a workflow execution
