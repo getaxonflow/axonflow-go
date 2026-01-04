@@ -23,6 +23,7 @@ import (
 type AxonFlowConfig struct {
 	AgentURL        string        // Required: AxonFlow Agent URL
 	OrchestratorURL string        // Optional: Orchestrator URL (for Execution Replay API). Defaults to agent URL with port 8081.
+	PortalURL       string        // Optional: Customer Portal URL (for enterprise PR workflow). Defaults to agent URL with port 8082.
 	ClientID        string        // Optional: Client ID (required for enterprise features)
 	ClientSecret    string        // Optional: Client secret (required for enterprise features)
 	LicenseKey      string        // Optional: License key (alternative to ClientID/ClientSecret)
@@ -53,6 +54,26 @@ type AxonFlowClient struct {
 	httpClient    *http.Client
 	mapHttpClient *http.Client // Separate client with longer timeout for MAP operations
 	cache         *cache
+	sessionCookie string // Session cookie for Customer Portal authentication
+}
+
+// ============================================================================
+// Portal Authentication Types
+// ============================================================================
+
+// PortalLoginRequest represents a login request to the Customer Portal
+type PortalLoginRequest struct {
+	OrgID    string `json:"org_id"`
+	Password string `json:"password"`
+}
+
+// PortalLoginResponse represents a login response from the Customer Portal
+type PortalLoginResponse struct {
+	SessionID string `json:"session_id"`
+	OrgID     string `json:"org_id"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	ExpiresAt string `json:"expires_at"`
 }
 
 // ClientRequest represents a request to AxonFlow Agent
@@ -1414,6 +1435,130 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// ============================================================================
+// Portal Authentication Methods
+// ============================================================================
+
+// LoginToPortal authenticates with the Customer Portal and stores the session cookie.
+// This is required for enterprise features like Code Governance PR workflow.
+//
+// Example:
+//
+//	resp, err := client.LoginToPortal("test-org-001", "test123")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Printf("Logged in as %s\n", resp.Name)
+//
+//	// Now you can use Code Governance methods
+//	providers, err := client.ListGitProviders()
+func (c *AxonFlowClient) LoginToPortal(orgID, password string) (*PortalLoginResponse, error) {
+	reqBody := PortalLoginRequest{
+		OrgID:    orgID,
+		Password: password,
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal login request: %w", err)
+	}
+
+	fullURL := c.getPortalURL() + "/api/v1/auth/login"
+
+	req, err := http.NewRequest("POST", fullURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create login request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Portal login for org: %s", orgID)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("login request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read login response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return nil, &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(respBody),
+		}
+	}
+
+	var loginResp PortalLoginResponse
+	if err := json.Unmarshal(respBody, &loginResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal login response: %w", err)
+	}
+
+	// Extract session cookie from response and store it
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == "axonflow_session" {
+			c.sessionCookie = cookie.Value
+			if c.config.Debug {
+				log.Printf("[AxonFlow] Portal session established for %s", orgID)
+			}
+			break
+		}
+	}
+
+	// If no cookie in response, use session_id from JSON response
+	if c.sessionCookie == "" && loginResp.SessionID != "" {
+		c.sessionCookie = loginResp.SessionID
+		if c.config.Debug {
+			log.Printf("[AxonFlow] Portal session established from response body for %s", orgID)
+		}
+	}
+
+	return &loginResp, nil
+}
+
+// LogoutFromPortal logs out from the Customer Portal and clears the session cookie.
+func (c *AxonFlowClient) LogoutFromPortal() error {
+	if c.sessionCookie == "" {
+		return nil // Already logged out
+	}
+
+	fullURL := c.getPortalURL() + "/api/v1/auth/logout"
+
+	req, err := http.NewRequest("POST", fullURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create logout request: %w", err)
+	}
+
+	req.AddCookie(&http.Cookie{
+		Name:  "axonflow_session",
+		Value: c.sessionCookie,
+	})
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("logout request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	c.sessionCookie = ""
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Portal session ended")
+	}
+
+	return nil
+}
+
+// IsLoggedIn returns true if the client has an active portal session.
+func (c *AxonFlowClient) IsLoggedIn() bool {
+	return c.sessionCookie != ""
 }
 
 // makeJSONRequest is a generic helper for making JSON HTTP requests
