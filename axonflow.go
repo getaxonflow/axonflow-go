@@ -651,7 +651,7 @@ func getMetadataKeys(metadata map[string]interface{}) []string {
 
 // ListConnectors returns all available MCP connectors from the marketplace
 func (c *AxonFlowClient) ListConnectors() ([]ConnectorMetadata, error) {
-	resp, err := c.httpClient.Get(c.config.AgentURL + "/api/connectors")
+	resp, err := c.httpClient.Get(c.getOrchestratorURL() + "/api/v1/connectors")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list connectors: %w", err)
 	}
@@ -662,16 +662,20 @@ func (c *AxonFlowClient) ListConnectors() ([]ConnectorMetadata, error) {
 		return nil, fmt.Errorf("list connectors failed: HTTP %d: %s", resp.StatusCode, string(body))
 	}
 
-	var connectors []ConnectorMetadata
-	if err := json.NewDecoder(resp.Body).Decode(&connectors); err != nil {
+	// Response is wrapped: {"connectors": [...], "total": N}
+	var response struct {
+		Connectors []ConnectorMetadata `json:"connectors"`
+		Total      int                 `json:"total"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode connectors: %w", err)
 	}
 
 	if c.config.Debug {
-		log.Printf("[AxonFlow] Listed %d connectors", len(connectors))
+		log.Printf("[AxonFlow] Listed %d connectors", len(response.Connectors))
 	}
 
-	return connectors, nil
+	return response.Connectors, nil
 }
 
 // InstallConnector installs an MCP connector from the marketplace
@@ -681,7 +685,9 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 		return fmt.Errorf("failed to marshal install request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/connectors/install", bytes.NewReader(reqBody))
+	// Connector install is on Orchestrator: POST /api/v1/connectors/{id}/install
+	url := fmt.Sprintf("%s/api/v1/connectors/%s/install", c.getOrchestratorURL(), req.ConnectorID)
+	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to create install request: %w", err)
 	}
