@@ -114,6 +114,16 @@ type ConnectorMetadata struct {
 	Installed    bool                   `json:"installed"`
 	InstanceName string                 `json:"instance_name,omitempty"` // Name of installed instance
 	Healthy      bool                   `json:"healthy,omitempty"`
+	LastCheck    string                 `json:"last_check,omitempty"` // When last health check was performed
+}
+
+// ConnectorHealthStatus represents the health status of an installed connector
+type ConnectorHealthStatus struct {
+	Healthy   bool              `json:"healthy"`   // Overall health status
+	Latency   int64             `json:"latency"`   // Connection latency in nanoseconds
+	Details   map[string]string `json:"details"`   // Additional diagnostic info
+	Timestamp string            `json:"timestamp"` // When health check was performed
+	Error     string            `json:"error"`     // Error message if unhealthy
 }
 
 // ConnectorInstallRequest represents a request to install an MCP connector
@@ -695,6 +705,66 @@ func (c *AxonFlowClient) ListConnectors() ([]ConnectorMetadata, error) {
 	}
 
 	return response.Connectors, nil
+}
+
+// GetConnector returns details for a specific connector by ID
+func (c *AxonFlowClient) GetConnector(connectorID string) (*ConnectorMetadata, error) {
+	url := fmt.Sprintf("%s/api/v1/connectors/%s", c.getOrchestratorURL(), connectorID)
+	resp, err := c.httpClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get connector: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("connector not found: %s", connectorID)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("get connector failed: HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	var connector ConnectorMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&connector); err != nil {
+		return nil, fmt.Errorf("failed to decode connector: %w", err)
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Got connector: %s (installed: %v)", connector.ID, connector.Installed)
+	}
+
+	return &connector, nil
+}
+
+// GetConnectorHealth returns the health status of an installed connector
+func (c *AxonFlowClient) GetConnectorHealth(connectorID string) (*ConnectorHealthStatus, error) {
+	url := fmt.Sprintf("%s/api/v1/connectors/%s/health", c.getOrchestratorURL(), connectorID)
+	resp, err := c.httpClient.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get connector health: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("connector not found: %s", connectorID)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("connector health check failed: HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	var status ConnectorHealthStatus
+	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+		return nil, fmt.Errorf("failed to decode health status: %w", err)
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Connector %s health: %v", connectorID, status.Healthy)
+	}
+
+	return &status, nil
 }
 
 // InstallConnector installs an MCP connector from the marketplace

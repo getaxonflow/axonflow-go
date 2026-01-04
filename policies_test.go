@@ -28,17 +28,17 @@ var sampleDynamicPolicy = DynamicPolicy{
 	ID:          "dpol_456",
 	Name:        "Rate Limit API",
 	Description: "Rate limit API calls",
-	Category:    CategoryDynamicCost,
-	Tier:        TierOrganization,
-	Enabled:     true,
-	Config: DynamicPolicyConfig{
-		Type:   "rate-limit",
-		Rules:  map[string]interface{}{"maxRequestsPerMinute": 100},
-		Action: ActionBlock,
+	Type:        "cost",
+	Conditions: []DynamicPolicyCondition{
+		{Field: "requests_per_minute", Operator: "greater_than", Value: 100},
 	},
+	Actions: []DynamicPolicyAction{
+		{Type: "block", Config: map[string]interface{}{"reason": "Rate limit exceeded"}},
+	},
+	Priority:  50,
+	Enabled:   true,
 	CreatedAt: time.Now(),
 	UpdatedAt: time.Now(),
-	Version:   1,
 }
 
 var sampleOverride = PolicyOverride{
@@ -502,14 +502,16 @@ func TestCreateDynamicPolicy(t *testing.T) {
 	})
 
 	req := &CreateDynamicPolicyRequest{
-		Name:     "Rate Limit API",
-		Category: CategoryDynamicCost,
-		Config: DynamicPolicyConfig{
-			Type:   "rate-limit",
-			Rules:  map[string]interface{}{"maxRequestsPerMinute": 100},
-			Action: ActionBlock,
+		Name: "Rate Limit API",
+		Type: "cost",
+		Conditions: []DynamicPolicyCondition{
+			{Field: "requests_per_minute", Operator: "greater_than", Value: 100},
 		},
-		Enabled: true,
+		Actions: []DynamicPolicyAction{
+			{Type: "block", Config: map[string]interface{}{"reason": "Rate limit exceeded"}},
+		},
+		Priority: 50,
+		Enabled:  true,
 	}
 
 	policy, err := client.CreateDynamicPolicy(req)
