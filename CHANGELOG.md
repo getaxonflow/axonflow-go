@@ -5,6 +5,28 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-01-04
+
+### Added
+
+- **Execution Replay API**: Debug governed workflows with step-by-step state capture
+  - `ListExecutions()` - List executions with filtering (status, time range)
+  - `GetExecution()` - Get execution with all step snapshots
+  - `GetExecutionSteps()` - Get individual step snapshots
+  - `GetExecutionTimeline()` - Timeline view for visualization
+  - `ExportExecution()` - Export for compliance/archival
+  - `DeleteExecution()` - Delete execution records
+
+- **Cost Controls**: Budget management and LLM usage tracking
+  - `CreateBudget()` / `GetBudget()` / `ListBudgets()` - Budget CRUD
+  - `UpdateBudget()` / `DeleteBudget()` - Budget management
+  - `GetBudgetStatus()` - Check current budget usage
+  - `CheckBudget()` - Pre-request budget validation
+  - `RecordUsage()` - Record LLM token usage
+  - `GetUsageSummary()` - Usage analytics and reporting
+
+---
+
 ## [1.14.0] - 2025-12-30
 
 ### Fixed
