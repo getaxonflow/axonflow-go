@@ -177,15 +177,6 @@ type CreateOverrideRequest = CreatePolicyOverrideRequest
 // Dynamic Policy Types
 // ============================================================================
 
-// DynamicPolicyConfig represents configuration for a dynamic policy
-type DynamicPolicyConfig struct {
-	Type       string                   `json:"type"`
-	Rules      map[string]interface{}   `json:"rules"`
-	Conditions []DynamicPolicyCondition `json:"conditions,omitempty"`
-	Action     PolicyAction             `json:"action"`
-	Parameters map[string]interface{}   `json:"parameters,omitempty"`
-}
-
 // DynamicPolicyCondition represents a condition for dynamic policy evaluation
 type DynamicPolicyCondition struct {
 	Field    string      `json:"field"`
@@ -193,26 +184,31 @@ type DynamicPolicyCondition struct {
 	Value    interface{} `json:"value"`
 }
 
+// DynamicPolicyAction represents an action for dynamic policy enforcement
+type DynamicPolicyAction struct {
+	Type   string                 `json:"type"` // "block", "alert", "redact", "log", "route", "modify_risk"
+	Config map[string]interface{} `json:"config,omitempty"`
+}
+
 // DynamicPolicy represents a dynamic policy definition
+// Dynamic policies are LLM-powered policies that can evaluate complex,
+// context-aware rules that can't be expressed with simple regex patterns.
 type DynamicPolicy struct {
-	ID             string              `json:"id"`
-	Name           string              `json:"name"`
-	Description    string              `json:"description,omitempty"`
-	Category       PolicyCategory      `json:"category"`
-	Tier           PolicyTier          `json:"tier"`
-	Enabled        bool                `json:"enabled"`
-	OrganizationID *string             `json:"organization_id,omitempty"`
-	TenantID       *string             `json:"tenant_id,omitempty"`
-	Config         DynamicPolicyConfig `json:"config"`
-	CreatedAt      time.Time           `json:"created_at"`
-	UpdatedAt      time.Time           `json:"updated_at"`
-	Version        int                 `json:"version,omitempty"`
+	ID          string                   `json:"id"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description,omitempty"`
+	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
+	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
+	Priority    int                      `json:"priority"`
+	Enabled     bool                     `json:"enabled"`
+	CreatedAt   time.Time                `json:"created_at"`
+	UpdatedAt   time.Time                `json:"updated_at"`
 }
 
 // ListDynamicPoliciesOptions represents options for listing dynamic policies
 type ListDynamicPoliciesOptions struct {
-	Category  PolicyCategory
-	Tier      PolicyTier
+	Type      string // Filter by policy type: "risk", "content", "user", "cost"
 	Enabled   *bool
 	Limit     int
 	Offset    int
@@ -223,20 +219,24 @@ type ListDynamicPoliciesOptions struct {
 
 // CreateDynamicPolicyRequest represents a request to create a dynamic policy
 type CreateDynamicPolicyRequest struct {
-	Name        string              `json:"name"`
-	Description string              `json:"description,omitempty"`
-	Category    PolicyCategory      `json:"category"`
-	Config      DynamicPolicyConfig `json:"config"`
-	Enabled     bool                `json:"enabled"`
+	Name        string                   `json:"name"`
+	Description string                   `json:"description,omitempty"`
+	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
+	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
+	Priority    int                      `json:"priority"`
+	Enabled     bool                     `json:"enabled"`
 }
 
 // UpdateDynamicPolicyRequest represents a request to update a dynamic policy
 type UpdateDynamicPolicyRequest struct {
-	Name        *string              `json:"name,omitempty"`
-	Description *string              `json:"description,omitempty"`
-	Category    *PolicyCategory      `json:"category,omitempty"`
-	Config      *DynamicPolicyConfig `json:"config,omitempty"`
-	Enabled     *bool                `json:"enabled,omitempty"`
+	Name        *string                  `json:"name,omitempty"`
+	Description *string                  `json:"description,omitempty"`
+	Type        *string                  `json:"type,omitempty"`
+	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
+	Priority    *int                     `json:"priority,omitempty"`
+	Enabled     *bool                    `json:"enabled,omitempty"`
 }
 
 // ============================================================================
@@ -528,11 +528,8 @@ func (o *ListStaticPoliciesOptions) buildQueryParams() string {
 
 func (o *ListDynamicPoliciesOptions) buildQueryParams() string {
 	params := url.Values{}
-	if o.Category != "" {
-		params.Set("category", string(o.Category))
-	}
-	if o.Tier != "" {
-		params.Set("tier", string(o.Tier))
+	if o.Type != "" {
+		params.Set("type", o.Type)
 	}
 	if o.Enabled != nil {
 		if *o.Enabled {

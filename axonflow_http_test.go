@@ -390,6 +390,115 @@ func TestInstallConnectorError(t *testing.T) {
 	}
 }
 
+func TestGetConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/connectors/redis" && r.Method == "GET" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(ConnectorMetadata{
+				ID:          "redis",
+				Name:        "Redis Connector",
+				Type:        "redis",
+				Version:     "1.0.0",
+				Description: "Connect to Redis databases",
+				Installed:   true,
+				Healthy:     true,
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+		Debug:           true,
+	})
+
+	connector, err := client.GetConnector("redis")
+	if err != nil {
+		t.Fatalf("GetConnector failed: %v", err)
+	}
+
+	if connector.ID != "redis" {
+		t.Errorf("Expected ID 'redis', got '%s'", connector.ID)
+	}
+	if !connector.Installed {
+		t.Error("Expected connector to be installed")
+	}
+}
+
+func TestGetConnectorNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Connector not found"))
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+	})
+
+	_, err := client.GetConnector("nonexistent")
+	if err == nil {
+		t.Error("Expected error for not found connector")
+	}
+}
+
+func TestGetConnectorHealth(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/connectors/redis/health" && r.Method == "GET" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(ConnectorHealthStatus{
+				Healthy:   true,
+				Latency:   1500000,
+				Timestamp: "2026-01-04T10:00:00Z",
+				Details:   map[string]string{"version": "7.0.0"},
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+		Debug:           true,
+	})
+
+	status, err := client.GetConnectorHealth("redis")
+	if err != nil {
+		t.Fatalf("GetConnectorHealth failed: %v", err)
+	}
+
+	if !status.Healthy {
+		t.Error("Expected connector to be healthy")
+	}
+	if status.Latency != 1500000 {
+		t.Errorf("Expected latency 1500000, got %d", status.Latency)
+	}
+}
+
+func TestGetConnectorHealthNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("Connector not found"))
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+	})
+
+	_, err := client.GetConnectorHealth("nonexistent")
+	if err == nil {
+		t.Error("Expected error for not found connector")
+	}
+}
+
 func TestQueryConnector(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/request" {
