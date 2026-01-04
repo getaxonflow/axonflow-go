@@ -5,6 +5,7 @@ package axonflow
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -1283,4 +1284,67 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// makeJSONRequest is a generic helper for making JSON HTTP requests
+func (c *AxonFlowClient) makeJSONRequest(ctx context.Context, method, fullURL string, body interface{}, result interface{}) error {
+	var reqBody io.Reader
+	if body != nil {
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		reqBody = bytes.NewReader(bodyBytes)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, fullURL, reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add auth headers only when credentials are provided
+	// Community/self-hosted mode works without credentials
+	if c.config.LicenseKey != "" {
+		req.Header.Set("X-License-Key", c.config.LicenseKey)
+	}
+	if c.config.ClientSecret != "" {
+		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
+	}
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] JSON request: %s %s", method, fullURL)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(respBody),
+		}
+	}
+
+	// Handle no-content responses
+	if resp.StatusCode == 204 || len(respBody) == 0 {
+		return nil
+	}
+
+	if result != nil {
+		if err := json.Unmarshal(respBody, result); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %w", err)
+		}
+	}
+
+	return nil
 }
