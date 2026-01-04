@@ -1071,3 +1071,88 @@ func TestNonLocalHostIncludesAuth(t *testing.T) {
 		t.Errorf("Expected non-localhost URL")
 	}
 }
+
+func TestOrchestratorHealthCheck(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"service": "axonflow-orchestrator",
+				"status":  "healthy",
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+		Cache:           CacheConfig{Enabled: false},
+	})
+
+	err := client.OrchestratorHealthCheck()
+	if err != nil {
+		t.Fatalf("OrchestratorHealthCheck failed: %v", err)
+	}
+}
+
+func TestOrchestratorHealthCheckUnhealthy(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+		Cache:           CacheConfig{Enabled: false},
+	})
+
+	err := client.OrchestratorHealthCheck()
+	if err == nil {
+		t.Error("Expected error for unhealthy orchestrator")
+	}
+}
+
+func TestUninstallConnector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "DELETE" && r.URL.Path == "/api/v1/connectors/postgres" {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+		Cache:           CacheConfig{Enabled: false},
+	})
+
+	err := client.UninstallConnector("postgres")
+	if err != nil {
+		t.Fatalf("UninstallConnector failed: %v", err)
+	}
+}
+
+func TestUninstallConnectorNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte(`{"error": "connector not found"}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:        server.URL,
+		OrchestratorURL: server.URL,
+		ClientID:        "test",
+		Cache:           CacheConfig{Enabled: false},
+	})
+
+	err := client.UninstallConnector("nonexistent")
+	if err == nil {
+		t.Error("Expected error for nonexistent connector")
+	}
+}
