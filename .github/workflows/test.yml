@@ -53,12 +53,15 @@ jobs:
 
     - name: Check coverage threshold
       run: |
+        # Generate coverage for main SDK packages only (exclude examples)
+        go test -coverprofile=coverage-sdk.txt -covermode=atomic . ./interceptors
+
         # Extract coverage percentages
-        COVERAGE=$(go tool cover -func=coverage.txt | grep 'total:' | awk '{print $3}' | sed 's/%//')
+        COVERAGE=$(go tool cover -func=coverage-sdk.txt | grep 'total:' | awk '{print $3}' | sed 's/%//')
         echo "Total coverage: ${COVERAGE}%"
 
-        # Check threshold (70% minimum)
-        THRESHOLD=70
+        # Check threshold (75% minimum)
+        THRESHOLD=75
         if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
           echo "Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
           exit 1

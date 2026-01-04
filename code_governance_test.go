@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestLoginToPortal(t *testing.T) {
@@ -678,5 +679,307 @@ func TestGetPortalURLFallback(t *testing.T) {
 	// We can't directly test the private method, but we can verify behavior
 	if client.IsLoggedIn() {
 		t.Error("Client should not be logged in")
+	}
+}
+
+func TestGetPortalURLWithExplicitPortalURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
+			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PortalLoginResponse{SessionID: "sess-123", OrgID: "test-org"})
+		}
+		if r.URL.Path == "/api/v1/code-governance/git-providers" && r.Method == "GET" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(ListGitProvidersResponse{Providers: []GitProviderInfo{}, Count: 0})
+		}
+	}))
+	defer server.Close()
+
+	// Test with explicit PortalURL set
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     "http://different-host:8080",
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		PortalURL:    server.URL, // Explicit portal URL
+	})
+
+	_, err := client.LoginToPortal("test-org", "password")
+	if err != nil {
+		t.Fatalf("LoginToPortal failed: %v", err)
+	}
+
+	// Should use explicit PortalURL
+	resp, err := client.ListGitProviders()
+	if err != nil {
+		t.Fatalf("ListGitProviders failed: %v", err)
+	}
+
+	if resp.Count != 0 {
+		t.Errorf("Expected 0 providers, got %d", resp.Count)
+	}
+}
+
+func TestGetPortalURLFallbackToAgent(t *testing.T) {
+	// This tests the fallback behavior when PortalURL is not set
+	// and we need to derive it from AgentURL
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     "http://myhost.example.com:8080",
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		// No PortalURL - should fallback to http://myhost.example.com:8082
+	})
+
+	// Set session cookie manually to bypass login
+	client.sessionCookie = "test-session"
+
+	// This will fail to connect but exercises the URL fallback logic
+	_, err := client.ListGitProviders()
+	if err == nil {
+		t.Error("Expected error when connecting to non-existent server")
+	}
+}
+
+func TestGetPortalURLWithInvalidAgentURL(t *testing.T) {
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     "://invalid-url", // Invalid URL
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		// No PortalURL
+	})
+
+	// Set session cookie manually to bypass login
+	client.sessionCookie = "test-session"
+
+	// This should fallback to localhost:8082 when parsing fails
+	// We just want to verify the URL parsing fallback works without crashing
+	// The actual connection may or may not fail depending on if localhost:8082 is available
+	_, _ = client.ListGitProviders()
+	// Test passes as long as we don't panic during URL parsing
+}
+
+func TestExportCodeGovernanceDataCSVWithOptions(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
+			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PortalLoginResponse{SessionID: "sess-123", OrgID: "test-org"})
+		}
+		if r.URL.Path == "/api/v1/code-governance/export" && r.Method == "GET" {
+			// Verify CSV format and state filter
+			if r.URL.Query().Get("format") != "csv" {
+				t.Error("Expected format=csv query param")
+			}
+			if r.URL.Query().Get("state") != "merged" {
+				t.Error("Expected state=merged query param")
+			}
+			w.Header().Set("Content-Type", "text/csv")
+			w.Write([]byte("id,title,state\npr-1,Test PR,merged\npr-2,Another PR,merged\n"))
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		PortalURL:    server.URL,
+	})
+
+	_, err := client.LoginToPortal("test-org", "password")
+	if err != nil {
+		t.Fatalf("LoginToPortal failed: %v", err)
+	}
+
+	opts := &ExportOptions{
+		Format: "csv",
+		State:  "merged",
+	}
+	csv, err := client.ExportCodeGovernanceDataCSV(opts)
+	if err != nil {
+		t.Fatalf("ExportCodeGovernanceDataCSV with options failed: %v", err)
+	}
+
+	if len(csv) == 0 {
+		t.Error("Expected non-empty CSV data")
+	}
+
+	// Verify CSV content
+	csvStr := string(csv)
+	if csvStr != "id,title,state\npr-1,Test PR,merged\npr-2,Another PR,merged\n" {
+		t.Errorf("Unexpected CSV content: %s", csvStr)
+	}
+}
+
+func TestExportCodeGovernanceDataCSVWithDateFilters(t *testing.T) {
+	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2025, 12, 31, 23, 59, 59, 0, time.UTC)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
+			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PortalLoginResponse{SessionID: "sess-123", OrgID: "test-org"})
+		}
+		if r.URL.Path == "/api/v1/code-governance/export" && r.Method == "GET" {
+			// Verify date filters are present
+			if r.URL.Query().Get("start_date") == "" {
+				t.Error("Expected start_date query param")
+			}
+			if r.URL.Query().Get("end_date") == "" {
+				t.Error("Expected end_date query param")
+			}
+			w.Header().Set("Content-Type", "text/csv")
+			w.Write([]byte("id,title,state,created_at\n"))
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		PortalURL:    server.URL,
+	})
+
+	_, err := client.LoginToPortal("test-org", "password")
+	if err != nil {
+		t.Fatalf("LoginToPortal failed: %v", err)
+	}
+
+	opts := &ExportOptions{
+		Format:    "csv",
+		StartDate: &startDate,
+		EndDate:   &endDate,
+	}
+	csv, err := client.ExportCodeGovernanceDataCSV(opts)
+	if err != nil {
+		t.Fatalf("ExportCodeGovernanceDataCSV with date filters failed: %v", err)
+	}
+
+	if len(csv) == 0 {
+		t.Error("Expected non-empty CSV data")
+	}
+}
+
+func TestListPRsWithAllOptions(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
+			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PortalLoginResponse{SessionID: "sess-123", OrgID: "test-org"})
+		}
+		if r.URL.Path == "/api/v1/code-governance/prs" && r.Method == "GET" {
+			// Verify all query params
+			if r.URL.Query().Get("state") != "merged" {
+				t.Error("Expected state=merged query param")
+			}
+			if r.URL.Query().Get("limit") != "50" {
+				t.Error("Expected limit=50 query param")
+			}
+			if r.URL.Query().Get("offset") != "25" {
+				t.Error("Expected offset=25 query param")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(ListPRsResponse{
+				PRs:   []PRRecord{{ID: "pr-1", State: "merged"}},
+				Count: 1,
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		PortalURL:    server.URL,
+	})
+
+	_, err := client.LoginToPortal("test-org", "password")
+	if err != nil {
+		t.Fatalf("LoginToPortal failed: %v", err)
+	}
+
+	opts := &ListPRsOptions{
+		State:  "merged",
+		Limit:  50,
+		Offset: 25,
+	}
+	resp, err := client.ListPRs(opts)
+	if err != nil {
+		t.Fatalf("ListPRs with all options failed: %v", err)
+	}
+
+	if len(resp.PRs) != 1 {
+		t.Errorf("Expected 1 PR, got %d", len(resp.PRs))
+	}
+}
+
+func TestPortalRequestRawWithoutLogin(t *testing.T) {
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     "http://localhost",
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+	})
+
+	// Try to export CSV without logging in
+	_, err := client.ExportCodeGovernanceDataCSV(nil)
+	if err == nil {
+		t.Error("Expected error when calling portal raw method without login")
+	}
+}
+
+func TestExportCodeGovernanceDataWithDateFilters(t *testing.T) {
+	startDate := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+	endDate := time.Date(2025, 6, 30, 23, 59, 59, 0, time.UTC)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
+			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PortalLoginResponse{SessionID: "sess-123", OrgID: "test-org"})
+		}
+		if r.URL.Path == "/api/v1/code-governance/export" && r.Method == "GET" {
+			// Verify date filters
+			if r.URL.Query().Get("start_date") == "" {
+				t.Error("Expected start_date query param")
+			}
+			if r.URL.Query().Get("end_date") == "" {
+				t.Error("Expected end_date query param")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(ExportResponse{
+				Records:    []PRRecord{{ID: "pr-1", State: "open"}},
+				Count:      1,
+				ExportedAt: "2025-06-15T00:00:00Z",
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		AgentURL:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		PortalURL:    server.URL,
+	})
+
+	_, err := client.LoginToPortal("test-org", "password")
+	if err != nil {
+		t.Fatalf("LoginToPortal failed: %v", err)
+	}
+
+	opts := &ExportOptions{
+		StartDate: &startDate,
+		EndDate:   &endDate,
+	}
+	export, err := client.ExportCodeGovernanceData(opts)
+	if err != nil {
+		t.Fatalf("ExportCodeGovernanceData with date filters failed: %v", err)
+	}
+
+	if export.Count != 1 {
+		t.Errorf("Expected count 1, got %d", export.Count)
 	}
 }
