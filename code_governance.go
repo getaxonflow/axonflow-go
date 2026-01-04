@@ -3,8 +3,12 @@
 package axonflow
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -208,6 +212,122 @@ type ListPRsResponse struct {
 }
 
 // ============================================================================
+// Portal URL Helper (for Enterprise PR Workflow)
+// ============================================================================
+
+// getPortalURL returns the portal URL, falling back to agent URL with port 8082
+func (c *AxonFlowClient) getPortalURL() string {
+	if c.config.PortalURL != "" {
+		return c.config.PortalURL
+	}
+	// Default: assume portal is on same host as agent, port 8082
+	parsed, err := url.Parse(c.config.AgentURL)
+	if err != nil {
+		return "http://localhost:8082"
+	}
+	parsed.Host = parsed.Hostname() + ":8082"
+	return parsed.String()
+}
+
+// portalRequest makes an HTTP request to the Customer Portal API (for enterprise features).
+// Requires prior authentication via LoginToPortal().
+func (c *AxonFlowClient) portalRequest(method, path string, body interface{}, result interface{}) error {
+	// Check if logged in
+	if c.sessionCookie == "" {
+		return fmt.Errorf("not logged in to Customer Portal. Call LoginToPortal() first")
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		bodyBytes, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		reqBody = bytes.NewReader(bodyBytes)
+	}
+
+	fullURL := c.getPortalURL() + path
+
+	req, err := http.NewRequest(method, fullURL, reqBody)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add session cookie for authentication
+	req.AddCookie(&http.Cookie{
+		Name:  "axonflow_session",
+		Value: c.sessionCookie,
+	})
+
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Portal request: %s %s", method, path)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		return &httpError{
+			statusCode: resp.StatusCode,
+			message:    string(respBody),
+		}
+	}
+
+	// Handle no-content responses
+	if resp.StatusCode == 204 || len(respBody) == 0 {
+		return nil
+	}
+
+	if result != nil {
+		if err := json.Unmarshal(respBody, result); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// portalRequestRaw makes an HTTP request to portal and returns raw bytes (for CSV export).
+// Requires prior authentication via LoginToPortal().
+func (c *AxonFlowClient) portalRequestRaw(method, path string) ([]byte, error) {
+	// Check if logged in
+	if c.sessionCookie == "" {
+		return nil, fmt.Errorf("not logged in to Customer Portal. Call LoginToPortal() first")
+	}
+
+	fullURL := c.getPortalURL() + path
+
+	req, err := http.NewRequest(method, fullURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add session cookie for authentication
+	req.AddCookie(&http.Cookie{
+		Name:  "axonflow_session",
+		Value: c.sessionCookie,
+	})
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	return io.ReadAll(resp.Body)
+}
+
+// ============================================================================
 // Code Governance Methods
 // ============================================================================
 
@@ -219,7 +339,7 @@ func (c *AxonFlowClient) ValidateGitProvider(req *ValidateGitProviderRequest) (*
 	}
 
 	var resp ValidateGitProviderResponse
-	if err := c.policyRequest("POST", "/api/v1/code-governance/git-providers/validate", req, &resp); err != nil {
+	if err := c.portalRequest("POST", "/api/v1/code-governance/git-providers/validate", req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -234,7 +354,7 @@ func (c *AxonFlowClient) ConfigureGitProvider(req *ConfigureGitProviderRequest) 
 	}
 
 	var resp ConfigureGitProviderResponse
-	if err := c.policyRequest("POST", "/api/v1/code-governance/git-providers", req, &resp); err != nil {
+	if err := c.portalRequest("POST", "/api/v1/code-governance/git-providers", req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -248,7 +368,7 @@ func (c *AxonFlowClient) ListGitProviders() (*ListGitProvidersResponse, error) {
 	}
 
 	var resp ListGitProvidersResponse
-	if err := c.policyRequest("GET", "/api/v1/code-governance/git-providers", nil, &resp); err != nil {
+	if err := c.portalRequest("GET", "/api/v1/code-governance/git-providers", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -261,7 +381,7 @@ func (c *AxonFlowClient) DeleteGitProvider(providerType GitProviderType) error {
 		log.Printf("[AxonFlow] Deleting Git provider: %s", providerType)
 	}
 
-	return c.policyRequest("DELETE", "/api/v1/code-governance/git-providers/"+string(providerType), nil, nil)
+	return c.portalRequest("DELETE", "/api/v1/code-governance/git-providers/"+string(providerType), nil, nil)
 }
 
 // CreatePR creates a Pull Request from LLM-generated code.
@@ -272,7 +392,7 @@ func (c *AxonFlowClient) CreatePR(req *CreatePRRequest) (*CreatePRResponse, erro
 	}
 
 	var resp CreatePRResponse
-	if err := c.policyRequest("POST", "/api/v1/code-governance/prs", req, &resp); err != nil {
+	if err := c.portalRequest("POST", "/api/v1/code-governance/prs", req, &resp); err != nil {
 		return nil, err
 	}
 
@@ -309,7 +429,7 @@ func (c *AxonFlowClient) ListPRs(options *ListPRsOptions) (*ListPRsResponse, err
 	}
 
 	var resp ListPRsResponse
-	if err := c.policyRequest("GET", path, nil, &resp); err != nil {
+	if err := c.portalRequest("GET", path, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -323,7 +443,7 @@ func (c *AxonFlowClient) GetPR(prID string) (*PRRecord, error) {
 	}
 
 	var resp PRRecord
-	if err := c.policyRequest("GET", "/api/v1/code-governance/prs/"+prID, nil, &resp); err != nil {
+	if err := c.portalRequest("GET", "/api/v1/code-governance/prs/"+prID, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -338,7 +458,7 @@ func (c *AxonFlowClient) SyncPRStatus(prID string) (*PRRecord, error) {
 	}
 
 	var resp PRRecord
-	if err := c.policyRequest("POST", "/api/v1/code-governance/prs/"+prID+"/sync", nil, &resp); err != nil {
+	if err := c.portalRequest("POST", "/api/v1/code-governance/prs/"+prID+"/sync", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -429,7 +549,7 @@ func (c *AxonFlowClient) GetCodeGovernanceMetrics() (*CodeGovernanceMetrics, err
 	}
 
 	var resp CodeGovernanceMetrics
-	if err := c.policyRequest("GET", "/api/v1/code-governance/metrics", nil, &resp); err != nil {
+	if err := c.portalRequest("GET", "/api/v1/code-governance/metrics", nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -453,7 +573,7 @@ func (c *AxonFlowClient) ExportCodeGovernanceData(options *ExportOptions) (*Expo
 	}
 
 	var resp ExportResponse
-	if err := c.policyRequest("GET", path, nil, &resp); err != nil {
+	if err := c.portalRequest("GET", path, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -474,5 +594,5 @@ func (c *AxonFlowClient) ExportCodeGovernanceDataCSV(options *ExportOptions) ([]
 		log.Printf("[AxonFlow] Exporting code governance data as CSV: %s", path)
 	}
 
-	return c.policyRequestRaw("GET", path)
+	return c.portalRequestRaw("GET", path)
 }
