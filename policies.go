@@ -21,18 +21,27 @@ import (
 type PolicyCategory string
 
 const (
-	CategorySecuritySQLI      PolicyCategory = "security-sqli"
-	CategorySecurityAdmin     PolicyCategory = "security-admin"
-	CategoryPIIGlobal         PolicyCategory = "pii-global"
-	CategoryPIIUS             PolicyCategory = "pii-us"
-	CategoryPIIEU             PolicyCategory = "pii-eu"
-	CategoryPIIIndia          PolicyCategory = "pii-india"
+	// Static policy categories - Security
+	CategorySecuritySQLI  PolicyCategory = "security-sqli"
+	CategorySecurityAdmin PolicyCategory = "security-admin"
+
+	// Static policy categories - PII Detection
+	CategoryPIIGlobal PolicyCategory = "pii-global"
+	CategoryPIIUS     PolicyCategory = "pii-us"
+	CategoryPIIEU     PolicyCategory = "pii-eu"
+	CategoryPIIIndia  PolicyCategory = "pii-india"
+
+	// Static policy categories - Code Governance
+	CategoryCodeSecrets    PolicyCategory = "code-secrets"
+	CategoryCodeUnsafe     PolicyCategory = "code-unsafe"
+	CategoryCodeCompliance PolicyCategory = "code-compliance"
+
+	// Dynamic policy categories
 	CategoryDynamicRisk       PolicyCategory = "dynamic-risk"
 	CategoryDynamicCompliance PolicyCategory = "dynamic-compliance"
 	CategoryDynamicSecurity   PolicyCategory = "dynamic-security"
 	CategoryDynamicCost       PolicyCategory = "dynamic-cost"
 	CategoryDynamicAccess     PolicyCategory = "dynamic-access"
-	CategoryCustom            PolicyCategory = "custom"
 )
 
 // PolicyTier determines where policies apply
