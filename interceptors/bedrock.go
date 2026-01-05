@@ -7,8 +7,8 @@
 //
 //	import (
 //		"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
-//		"github.com/getaxonflow/axonflow-sdk-go"
-//		"github.com/getaxonflow/axonflow-sdk-go/interceptors"
+//		"github.com/getaxonflow/axonflow-sdk-go/v2"
+//		"github.com/getaxonflow/axonflow-sdk-go/v2/interceptors"
 //	)
 //
 //	client := bedrockruntime.NewFromConfig(cfg)
@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getaxonflow/axonflow-sdk-go"
+	"github.com/getaxonflow/axonflow-sdk-go/v2"
 )
 
 // BedrockModels contains common Bedrock model IDs
