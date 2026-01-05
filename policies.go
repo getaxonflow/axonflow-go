@@ -203,16 +203,17 @@ type DynamicPolicyAction struct {
 // Dynamic policies are LLM-powered policies that can evaluate complex,
 // context-aware rules that can't be expressed with simple regex patterns.
 type DynamicPolicy struct {
-	ID          string                   `json:"id"`
-	Name        string                   `json:"name"`
-	Description string                   `json:"description,omitempty"`
-	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
-	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
-	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
-	Priority    int                      `json:"priority"`
-	Enabled     bool                     `json:"enabled"`
-	CreatedAt   time.Time                `json:"created_at"`
-	UpdatedAt   time.Time                `json:"updated_at"`
+	ID               string                   `json:"id"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description,omitempty"`
+	Type             string                   `json:"type"` // "risk", "content", "user", "cost"
+	Conditions       []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Actions          []DynamicPolicyAction    `json:"actions,omitempty"`
+	AllowedProviders []string                 `json:"allowed_providers,omitempty"` // Restrict LLM routing to these providers (GDPR, HIPAA, RBI compliance)
+	Priority         int                      `json:"priority"`
+	Enabled          bool                     `json:"enabled"`
+	CreatedAt        time.Time                `json:"created_at"`
+	UpdatedAt        time.Time                `json:"updated_at"`
 }
 
 // ListDynamicPoliciesOptions represents options for listing dynamic policies
@@ -228,24 +229,26 @@ type ListDynamicPoliciesOptions struct {
 
 // CreateDynamicPolicyRequest represents a request to create a dynamic policy
 type CreateDynamicPolicyRequest struct {
-	Name        string                   `json:"name"`
-	Description string                   `json:"description,omitempty"`
-	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
-	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
-	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
-	Priority    int                      `json:"priority"`
-	Enabled     bool                     `json:"enabled"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description,omitempty"`
+	Type             string                   `json:"type"` // "risk", "content", "user", "cost"
+	Conditions       []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Actions          []DynamicPolicyAction    `json:"actions,omitempty"`
+	AllowedProviders []string                 `json:"allowed_providers,omitempty"` // Restrict LLM routing to these providers
+	Priority         int                      `json:"priority"`
+	Enabled          bool                     `json:"enabled"`
 }
 
 // UpdateDynamicPolicyRequest represents a request to update a dynamic policy
 type UpdateDynamicPolicyRequest struct {
-	Name        *string                  `json:"name,omitempty"`
-	Description *string                  `json:"description,omitempty"`
-	Type        *string                  `json:"type,omitempty"`
-	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
-	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
-	Priority    *int                     `json:"priority,omitempty"`
-	Enabled     *bool                    `json:"enabled,omitempty"`
+	Name             *string                  `json:"name,omitempty"`
+	Description      *string                  `json:"description,omitempty"`
+	Type             *string                  `json:"type,omitempty"`
+	Conditions       []DynamicPolicyCondition `json:"conditions,omitempty"`
+	Actions          []DynamicPolicyAction    `json:"actions,omitempty"`
+	AllowedProviders []string                 `json:"allowed_providers,omitempty"` // Restrict LLM routing to these providers
+	Priority         *int                     `json:"priority,omitempty"`
+	Enabled          *bool                    `json:"enabled,omitempty"`
 }
 
 // ============================================================================
