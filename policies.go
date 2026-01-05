@@ -210,9 +210,9 @@ type DynamicPolicy struct {
 	ID          string                   `json:"id"`
 	Name        string                   `json:"name"`
 	Description string                   `json:"description,omitempty"`
-	Type        string                   `json:"type"`                   // "risk", "content", "user", "cost"
-	Category    string                   `json:"category,omitempty"`     // "dynamic-risk", "dynamic-compliance", etc.
-	Tier        string                   `json:"tier,omitempty"`         // "system", "organization", "tenant"
+	Type        string                   `json:"type"`               // "risk", "content", "user", "cost"
+	Category    string                   `json:"category,omitempty"` // "dynamic-risk", "dynamic-compliance", etc.
+	Tier        string                   `json:"tier,omitempty"`     // "system", "organization", "tenant"
 	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
 	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
 	Priority    int                      `json:"priority"`
@@ -242,7 +242,7 @@ type ListDynamicPoliciesOptions struct {
 type CreateDynamicPolicyRequest struct {
 	Name        string                   `json:"name"`
 	Description string                   `json:"description,omitempty"`
-	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
+	Type        string                   `json:"type"`               // "risk", "content", "user", "cost"
 	Category    string                   `json:"category,omitempty"` // Must start with "dynamic-"
 	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
 	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
