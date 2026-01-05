@@ -25,10 +25,9 @@ func TestLoginToPortal(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	resp, err := client.LoginToPortal("test-org", "password")
@@ -65,10 +64,9 @@ func TestLogoutFromPortal(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	// Login first
@@ -98,7 +96,7 @@ func TestLogoutFromPortal(t *testing.T) {
 
 func TestIsLoggedInWithoutLogin(t *testing.T) {
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://localhost",
+		Endpoint:     "http://localhost",
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -126,10 +124,9 @@ func TestConfigureGitProvider(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	// Login first
@@ -172,10 +169,9 @@ func TestListGitProviders(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -211,10 +207,9 @@ func TestValidateGitProvider(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -249,10 +244,9 @@ func TestDeleteGitProvider(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -286,10 +280,9 @@ func TestListPRs(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -329,10 +322,9 @@ func TestListPRsWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -375,10 +367,9 @@ func TestCreatePR(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -426,10 +417,9 @@ func TestGetPR(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -466,10 +456,9 @@ func TestSyncPRStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -509,10 +498,9 @@ func TestGetCodeGovernanceMetrics(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -549,10 +537,9 @@ func TestExportCodeGovernanceData(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -593,10 +580,9 @@ func TestExportCodeGovernanceDataWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -632,10 +618,9 @@ func TestExportCodeGovernanceDataCSV(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -655,7 +640,7 @@ func TestExportCodeGovernanceDataCSV(t *testing.T) {
 
 func TestPortalRequestWithoutLogin(t *testing.T) {
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://localhost",
+		Endpoint:     "http://localhost",
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -667,22 +652,10 @@ func TestPortalRequestWithoutLogin(t *testing.T) {
 	}
 }
 
-func TestGetPortalURLFallback(t *testing.T) {
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://localhost:8080",
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-		// No PortalURL set
-	})
+// Note: Tests for getPortalURL fallback were removed in v2.0.0 (ADR-026 Single Entry Point).
+// All routes now go through the single Endpoint field.
 
-	// The getPortalURL method should fall back to agent host with port 8082
-	// We can't directly test the private method, but we can verify behavior
-	if client.IsLoggedIn() {
-		t.Error("Client should not be logged in")
-	}
-}
-
-func TestGetPortalURLWithExplicitPortalURL(t *testing.T) {
+func TestEndpointUsedForPortal(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
 			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
@@ -696,12 +669,11 @@ func TestGetPortalURLWithExplicitPortalURL(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Test with explicit PortalURL set
+	// All routes go through single endpoint
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://different-host:8080",
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL, // Explicit portal URL
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -709,7 +681,6 @@ func TestGetPortalURLWithExplicitPortalURL(t *testing.T) {
 		t.Fatalf("LoginToPortal failed: %v", err)
 	}
 
-	// Should use explicit PortalURL
 	resp, err := client.ListGitProviders()
 	if err != nil {
 		t.Fatalf("ListGitProviders failed: %v", err)
@@ -718,44 +689,6 @@ func TestGetPortalURLWithExplicitPortalURL(t *testing.T) {
 	if resp.Count != 0 {
 		t.Errorf("Expected 0 providers, got %d", resp.Count)
 	}
-}
-
-func TestGetPortalURLFallbackToAgent(t *testing.T) {
-	// This tests the fallback behavior when PortalURL is not set
-	// and we need to derive it from AgentURL
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://myhost.example.com:8080",
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-		// No PortalURL - should fallback to http://myhost.example.com:8082
-	})
-
-	// Set session cookie manually to bypass login
-	client.sessionCookie = "test-session"
-
-	// This will fail to connect but exercises the URL fallback logic
-	_, err := client.ListGitProviders()
-	if err == nil {
-		t.Error("Expected error when connecting to non-existent server")
-	}
-}
-
-func TestGetPortalURLWithInvalidAgentURL(t *testing.T) {
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     "://invalid-url", // Invalid URL
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-		// No PortalURL
-	})
-
-	// Set session cookie manually to bypass login
-	client.sessionCookie = "test-session"
-
-	// This should fallback to localhost:8082 when parsing fails
-	// We just want to verify the URL parsing fallback works without crashing
-	// The actual connection may or may not fail depending on if localhost:8082 is available
-	_, _ = client.ListGitProviders()
-	// Test passes as long as we don't panic during URL parsing
 }
 
 func TestExportCodeGovernanceDataCSVWithOptions(t *testing.T) {
@@ -780,10 +713,9 @@ func TestExportCodeGovernanceDataCSVWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -836,10 +768,9 @@ func TestExportCodeGovernanceDataCSVWithDateFilters(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -890,10 +821,9 @@ func TestListPRsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")
@@ -918,7 +848,7 @@ func TestListPRsWithAllOptions(t *testing.T) {
 
 func TestPortalRequestRawWithoutLogin(t *testing.T) {
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://localhost",
+		Endpoint:     "http://localhost",
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -959,10 +889,9 @@ func TestExportCodeGovernanceDataWithDateFilters(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		PortalURL:    server.URL,
 	})
 
 	_, err := client.LoginToPortal("test-org", "password")

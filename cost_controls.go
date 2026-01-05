@@ -439,24 +439,10 @@ func (c *AxonFlowClient) GetPricing(ctx context.Context, provider, model string)
 // HTTP Helper for Cost Requests
 // ============================================================================
 
-// costRequest makes an HTTP request to the cost control API (orchestrator)
+// costRequest makes an HTTP request to the cost control API via Agent proxy
 func (c *AxonFlowClient) costRequest(ctx context.Context, method, path string, body interface{}, result interface{}) error {
-	// Use orchestrator URL for cost control APIs
-	orchestratorURL := c.config.OrchestratorURL
-	if orchestratorURL == "" {
-		// Default: same as agent but port 8081
-		orchestratorURL = c.config.AgentURL
-		if orchestratorURL != "" {
-			// Replace port if present
-			if idx := lastIndex(orchestratorURL, ":"); idx > 0 && idx > lastIndex(orchestratorURL, "/") {
-				orchestratorURL = orchestratorURL[:idx] + ":8081"
-			} else {
-				orchestratorURL += ":8081"
-			}
-		}
-	}
-
-	return c.makeJSONRequest(ctx, method, orchestratorURL+path, body, result)
+	// All routes go through Agent endpoint since ADR-026
+	return c.makeJSONRequest(ctx, method, c.config.Endpoint+path, body, result)
 }
 
 // buildQueryParams builds query string for ListBudgetsOptions

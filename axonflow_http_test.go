@@ -25,7 +25,7 @@ func TestExecuteQuery(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 		Debug:        false,
@@ -63,7 +63,7 @@ func TestExecuteQueryWithCache(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 		Debug:        true,
@@ -105,7 +105,7 @@ func TestExecuteQueryBlocked(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 		Cache:        CacheConfig{Enabled: false},
@@ -142,7 +142,7 @@ func TestExecuteQueryWithNestedData(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    CacheConfig{Enabled: false},
 	})
@@ -171,7 +171,7 @@ func TestExecuteQueryWithError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox", // Use sandbox mode to disable fail-open
 		Retry: RetryConfig{
@@ -191,7 +191,7 @@ func TestExecuteQueryWithError(t *testing.T) {
 func TestExecuteQueryFailOpen(t *testing.T) {
 	// Create a server that doesn't respond (connection refused simulation)
 	client := NewClient(AxonFlowConfig{
-		AgentURL: "http://localhost:19999", // Non-existent server
+		Endpoint: "http://localhost:19999", // Non-existent server
 		ClientID: "test",
 		Mode:     "production", // Fail-open enabled
 		Retry: RetryConfig{
@@ -226,7 +226,7 @@ func TestHealthCheck(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Debug:    true,
 	})
@@ -247,7 +247,7 @@ func TestHealthCheckUnhealthy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 	})
 
@@ -286,10 +286,9 @@ func TestListConnectors(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Connectors are on orchestrator
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	connectors, err := client.ListConnectors()
@@ -316,9 +315,8 @@ func TestListConnectorsError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Connectors are on orchestrator
-		ClientID:        "test",
+		Endpoint: server.URL,
+		ClientID: "test",
 	})
 
 	_, err := client.ListConnectors()
@@ -349,10 +347,9 @@ func TestInstallConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Connector install is on orchestrator
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	err := client.InstallConnector(ConnectorInstallRequest{
@@ -376,7 +373,7 @@ func TestInstallConnectorError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 	})
 
@@ -408,10 +405,9 @@ func TestGetConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	connector, err := client.GetConnector("redis")
@@ -435,9 +431,8 @@ func TestGetConnectorNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
+		Endpoint: server.URL,
+		ClientID: "test",
 	})
 
 	_, err := client.GetConnector("nonexistent")
@@ -461,10 +456,9 @@ func TestGetConnectorHealth(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	status, err := client.GetConnectorHealth("redis")
@@ -488,9 +482,8 @@ func TestGetConnectorHealthNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
+		Endpoint: server.URL,
+		ClientID: "test",
 	})
 
 	_, err := client.GetConnectorHealth("nonexistent")
@@ -514,7 +507,7 @@ func TestQueryConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    CacheConfig{Enabled: false},
 	})
@@ -550,7 +543,7 @@ func TestGetPolicyApprovedContext(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Debug:        true,
@@ -590,7 +583,7 @@ func TestGetPolicyApprovedContextBlocked(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 	})
@@ -629,7 +622,7 @@ func TestGetPolicyApprovedContextWithRateLimit(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 	})
@@ -667,7 +660,7 @@ func TestPreCheck(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 	})
@@ -708,7 +701,7 @@ func TestAuditLLMCall(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Debug:        true,
@@ -754,7 +747,7 @@ func TestAuditLLMCallWithNilMetadata(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 	})
@@ -810,7 +803,7 @@ func TestGeneratePlan(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Debug:    true,
 		Cache:    CacheConfig{Enabled: false},
@@ -857,7 +850,7 @@ func TestGeneratePlanWithDefaultUserToken(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test-client",
 		Cache:    CacheConfig{Enabled: false},
 	})
@@ -886,7 +879,7 @@ func TestGeneratePlanError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    CacheConfig{Enabled: false},
 	})
@@ -924,7 +917,7 @@ func TestExecutePlan(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Debug:    true,
 		Cache:    CacheConfig{Enabled: false},
@@ -969,7 +962,7 @@ func TestExecutePlanFailed(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    CacheConfig{Enabled: false},
 	})
@@ -1000,7 +993,7 @@ func TestGetPlanStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 	})
 
@@ -1030,7 +1023,7 @@ func TestGetPlanStatusError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 	})
 
@@ -1042,7 +1035,7 @@ func TestGetPlanStatusError(t *testing.T) {
 
 func TestIsAxonFlowError(t *testing.T) {
 	client := NewClient(AxonFlowConfig{
-		AgentURL: "http://test.example.com",
+		Endpoint: "http://test.example.com",
 		ClientID: "test",
 	})
 
@@ -1114,7 +1107,7 @@ func TestRetryWith4xxError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox", // Use sandbox mode to disable fail-open
 		Debug:    true,
@@ -1148,7 +1141,7 @@ func TestAuthHeadersSentWithCredentials(t *testing.T) {
 
 	// When credentials are provided, auth headers should be sent
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "secret",
 		Cache:        CacheConfig{Enabled: false},
@@ -1166,7 +1159,7 @@ func TestNonLocalHostIncludesAuth(t *testing.T) {
 	// This tests that non-localhost URLs would include auth headers
 	// We verify this by checking the auth logic in the client configuration
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     "https://api.getaxonflow.com",
+		Endpoint:     "https://api.getaxonflow.com",
 		ClientID:     "test",
 		ClientSecret: "secret",
 		Cache:        CacheConfig{Enabled: false},
@@ -1176,7 +1169,7 @@ func TestNonLocalHostIncludesAuth(t *testing.T) {
 	if client.config.ClientSecret != "secret" {
 		t.Errorf("Expected ClientSecret 'secret', got '%s'", client.config.ClientSecret)
 	}
-	if client.config.AgentURL != "https://api.getaxonflow.com" {
+	if client.config.Endpoint != "https://api.getaxonflow.com" {
 		t.Errorf("Expected non-localhost URL")
 	}
 }
@@ -1194,10 +1187,9 @@ func TestOrchestratorHealthCheck(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.OrchestratorHealthCheck()
@@ -1213,10 +1205,9 @@ func TestOrchestratorHealthCheckUnhealthy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.OrchestratorHealthCheck()
@@ -1234,10 +1225,9 @@ func TestUninstallConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.UninstallConnector("postgres")
@@ -1254,10 +1244,9 @@ func TestUninstallConnectorNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.UninstallConnector("nonexistent")

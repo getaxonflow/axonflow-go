@@ -215,19 +215,8 @@ type ListPRsResponse struct {
 // Portal URL Helper (for Enterprise PR Workflow)
 // ============================================================================
 
-// getPortalURL returns the portal URL, falling back to agent URL with port 8082
-func (c *AxonFlowClient) getPortalURL() string {
-	if c.config.PortalURL != "" {
-		return c.config.PortalURL
-	}
-	// Default: assume portal is on same host as agent, port 8082
-	parsed, err := url.Parse(c.config.AgentURL)
-	if err != nil {
-		return "http://localhost:8082"
-	}
-	parsed.Host = parsed.Hostname() + ":8082"
-	return parsed.String()
-}
+// Note: getPortalURL was removed in v2.0.0 (ADR-026 Single Entry Point).
+// All routes now go through the Agent endpoint (c.config.Endpoint).
 
 // portalRequest makes an HTTP request to the Customer Portal API (for enterprise features).
 // Requires prior authentication via LoginToPortal().
@@ -246,7 +235,7 @@ func (c *AxonFlowClient) portalRequest(method, path string, body interface{}, re
 		reqBody = bytes.NewReader(bodyBytes)
 	}
 
-	fullURL := c.getPortalURL() + path
+	fullURL := c.config.Endpoint + path
 
 	req, err := http.NewRequest(method, fullURL, reqBody)
 	if err != nil {
@@ -305,7 +294,7 @@ func (c *AxonFlowClient) portalRequestRaw(method, path string) ([]byte, error) {
 		return nil, fmt.Errorf("not logged in to Customer Portal. Call LoginToPortal() first")
 	}
 
-	fullURL := c.getPortalURL() + path
+	fullURL := c.config.Endpoint + path
 
 	req, err := http.NewRequest(method, fullURL, nil)
 	if err != nil {

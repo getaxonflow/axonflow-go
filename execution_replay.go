@@ -110,20 +110,8 @@ type ExecutionExportOptions struct {
 // Execution Replay Methods
 // ============================================================================
 
-// getOrchestratorURL returns the orchestrator URL, falling back to agent URL with port 8081
-func (c *AxonFlowClient) getOrchestratorURL() string {
-	if c.config.OrchestratorURL != "" {
-		return c.config.OrchestratorURL
-	}
-	// Default: assume orchestrator is on same host as agent, port 8081
-	// Parse agent URL and replace port
-	parsed, err := url.Parse(c.config.AgentURL)
-	if err != nil {
-		return "http://localhost:8081"
-	}
-	parsed.Host = parsed.Hostname() + ":8081"
-	return parsed.String()
-}
+// Note: getOrchestratorURL was removed in v2.0.0 (ADR-026 Single Entry Point).
+// All routes now go through the Agent endpoint (c.config.Endpoint).
 
 // ListExecutions retrieves a paginated list of execution summaries.
 //
@@ -137,7 +125,7 @@ func (c *AxonFlowClient) getOrchestratorURL() string {
 //	    fmt.Printf("%s: %s (%d steps)\n", exec.RequestID, exec.Status, exec.TotalSteps)
 //	}
 func (c *AxonFlowClient) ListExecutions(options *ListExecutionsOptions) (*ListExecutionsResponse, error) {
-	baseURL := c.getOrchestratorURL()
+	baseURL := c.config.Endpoint
 
 	// Build query parameters
 	params := url.Values{}
@@ -207,7 +195,7 @@ func (c *AxonFlowClient) ListExecutions(options *ListExecutionsOptions) (*ListEx
 //	    fmt.Printf("  Step %d: %s (%dms)\n", step.StepIndex, step.StepName, *step.DurationMs)
 //	}
 func (c *AxonFlowClient) GetExecution(executionID string) (*ExecutionDetail, error) {
-	baseURL := c.getOrchestratorURL()
+	baseURL := c.config.Endpoint
 	reqURL := fmt.Sprintf("%s/api/v1/executions/%s", baseURL, executionID)
 
 	resp, err := c.httpClient.Get(reqURL)
@@ -254,7 +242,7 @@ func (c *AxonFlowClient) GetExecution(executionID string) (*ExecutionDetail, err
 //	    fmt.Printf("Step %d: %s - %s\n", step.StepIndex, step.StepName, step.Status)
 //	}
 func (c *AxonFlowClient) GetExecutionSteps(executionID string) ([]ExecutionSnapshot, error) {
-	baseURL := c.getOrchestratorURL()
+	baseURL := c.config.Endpoint
 	reqURL := fmt.Sprintf("%s/api/v1/executions/%s/steps", baseURL, executionID)
 
 	resp, err := c.httpClient.Get(reqURL)
@@ -304,7 +292,7 @@ func (c *AxonFlowClient) GetExecutionSteps(executionID string) ([]ExecutionSnaps
 //	    fmt.Println()
 //	}
 func (c *AxonFlowClient) GetExecutionTimeline(executionID string) ([]TimelineEntry, error) {
-	baseURL := c.getOrchestratorURL()
+	baseURL := c.config.Endpoint
 	reqURL := fmt.Sprintf("%s/api/v1/executions/%s/timeline", baseURL, executionID)
 
 	resp, err := c.httpClient.Get(reqURL)
@@ -353,7 +341,7 @@ func (c *AxonFlowClient) GetExecutionTimeline(executionID string) ([]TimelineEnt
 //	data, _ := json.MarshalIndent(export, "", "  ")
 //	os.WriteFile("audit-export.json", data, 0644)
 func (c *AxonFlowClient) ExportExecution(executionID string, options *ExecutionExportOptions) (map[string]interface{}, error) {
-	baseURL := c.getOrchestratorURL()
+	baseURL := c.config.Endpoint
 
 	// Build query parameters
 	params := url.Values{}
@@ -420,7 +408,7 @@ func (c *AxonFlowClient) ExportExecution(executionID string, options *ExecutionE
 //	    log.Printf("Failed to delete: %v", err)
 //	}
 func (c *AxonFlowClient) DeleteExecution(executionID string) error {
-	baseURL := c.getOrchestratorURL()
+	baseURL := c.config.Endpoint
 	reqURL := fmt.Sprintf("%s/api/v1/executions/%s", baseURL, executionID)
 
 	req, err := http.NewRequest(http.MethodDelete, reqURL, nil)

@@ -89,10 +89,9 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			AgentURL:        server.URL,
-			OrchestratorURL: server.URL,
-			ClientID:        "test-client",
-			LicenseKey:      "test-key",
+			Endpoint:   server.URL,
+			ClientID:   "test-client",
+			LicenseKey: "test-key",
 		})
 
 		req := &AuditSearchRequest{
@@ -139,7 +138,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		result, err := client.SearchAuditLogs(context.Background(), nil)
@@ -171,7 +170,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		req := &AuditSearchRequest{Limit: 5000} // Request more than max
@@ -189,7 +188,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		_, err := client.SearchAuditLogs(context.Background(), nil)
@@ -214,7 +213,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		_, err := client.SearchAuditLogs(context.Background(), nil)
@@ -239,7 +238,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		_, err := client.SearchAuditLogs(context.Background(), nil)
@@ -258,7 +257,7 @@ func TestSearchAuditLogs(t *testing.T) {
 
 	t.Run("handles network error", func(t *testing.T) {
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: "http://localhost:99999", // Invalid port
+			Endpoint: "http://localhost:99999", // Invalid port - will cause network error
 		})
 
 		_, err := client.SearchAuditLogs(context.Background(), nil)
@@ -283,7 +282,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		result, err := client.SearchAuditLogs(context.Background(), nil)
@@ -311,7 +310,7 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		req := &AuditSearchRequest{Offset: 50}
@@ -336,9 +335,9 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
-			LicenseKey:      "my-license",
-			ClientSecret:    "my-secret",
+			Endpoint:     server.URL,
+			LicenseKey:   "my-license",
+			ClientSecret: "my-secret",
 		})
 
 		_, err := client.SearchAuditLogs(context.Background(), nil)
@@ -383,7 +382,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		result, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -414,7 +413,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		opts := &AuditQueryOptions{
@@ -430,7 +429,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 
 	t.Run("empty tenant ID returns error", func(t *testing.T) {
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: "http://localhost:8081",
+			Endpoint: "http://localhost:8080", // URL doesn't matter - error before HTTP call
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "", nil)
@@ -454,7 +453,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		opts := &AuditQueryOptions{Limit: 5000}
@@ -472,7 +471,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "invalid!", nil)
@@ -497,7 +496,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "other-tenant", nil)
@@ -522,7 +521,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "nonexistent", nil)
@@ -541,7 +540,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 
 	t.Run("handles network error", func(t *testing.T) {
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: "http://localhost:99999",
+			Endpoint: "http://localhost:99999", // Invalid port - will cause network error
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -566,7 +565,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
+			Endpoint: server.URL,
 		})
 
 		result, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -591,8 +590,8 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
-			LicenseKey:      "my-license",
+			Endpoint:   server.URL,
+			LicenseKey: "my-license",
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -609,8 +608,8 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			OrchestratorURL: server.URL,
-			Debug:           true,
+			Endpoint: server.URL,
+			Debug:    true,
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -714,7 +713,7 @@ func TestContextCancellation(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		OrchestratorURL: server.URL,
+		Endpoint: server.URL,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)

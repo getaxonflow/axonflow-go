@@ -23,7 +23,7 @@ func main() {
 	// Initialize client with advanced configuration
 	fmt.Println("Initializing AxonFlow client with advanced features...")
 	client := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     agentURL,
+		Endpoint:     agentURL,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Mode:         "production",
