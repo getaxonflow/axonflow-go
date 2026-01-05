@@ -83,7 +83,7 @@ func TestWrapOpenAIClient_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -134,7 +134,7 @@ func TestWrapOpenAIClient_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox", // Disable fail-open
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -162,7 +162,7 @@ func TestWrapOpenAIClient_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -193,7 +193,7 @@ func TestWrapOpenAIFunc_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -232,7 +232,7 @@ func TestWrapOpenAIFunc_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox",
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -266,7 +266,7 @@ func TestWrapAnthropicClient_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -311,7 +311,7 @@ func TestWrapAnthropicClient_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox",
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -339,7 +339,7 @@ func TestWrapAnthropicClient_WithSystemPrompt(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -376,7 +376,7 @@ func TestWrapAnthropicFunc_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -409,7 +409,7 @@ func TestWrapAnthropicFunc_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox",
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -593,7 +593,7 @@ func TestWrapGeminiModel_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -638,7 +638,7 @@ func TestWrapGeminiModelWithName(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -657,7 +657,7 @@ func TestWrapGeminiModel_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Mode:         "sandbox",
@@ -752,7 +752,7 @@ func TestWrapOpenAIClient_LongResponse(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -792,7 +792,7 @@ func TestWrapOpenAIClient_EmptyChoices(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -828,7 +828,7 @@ func TestWrapAnthropicClient_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -863,7 +863,7 @@ func TestWrapOpenAIClient_AxonFlowError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox", // Disable fail-open
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -889,7 +889,7 @@ func TestWrapAnthropicClient_AxonFlowError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox",
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -918,7 +918,7 @@ func TestWrapOpenAIFunc_AxonFlowError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox",
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -945,7 +945,7 @@ func TestWrapOpenAIFunc_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -975,7 +975,7 @@ func TestWrapAnthropicFunc_AxonFlowError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Mode:     "sandbox",
 		Cache:    axonflow.CacheConfig{Enabled: false},
@@ -1003,7 +1003,7 @@ func TestWrapAnthropicFunc_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		ClientID: "test",
 		Cache:    axonflow.CacheConfig{Enabled: false},
 	})
@@ -1030,7 +1030,7 @@ func TestWrapGeminiModel_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1057,7 +1057,7 @@ func TestWrapGeminiModel_AxonFlowError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Mode:         "sandbox",
@@ -1078,7 +1078,7 @@ func TestWrapGeminiModel_NilUsageMetadata(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1156,7 +1156,7 @@ func TestWrapOllamaChatClient_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1194,7 +1194,7 @@ func TestWrapOllamaChatClient_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Mode:         "sandbox",
@@ -1222,7 +1222,7 @@ func TestWrapOllamaChatClient_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1251,7 +1251,7 @@ func TestWrapOllamaChatFunc_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1285,7 +1285,7 @@ func TestWrapOllamaChatFunc_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Mode:         "sandbox",
@@ -1318,7 +1318,7 @@ func TestWrapOllamaGenerateFunc_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Mode:         "sandbox",
@@ -1351,7 +1351,7 @@ func TestWrapOllamaGenerateFunc_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1378,7 +1378,7 @@ func TestWrapOllamaGenerateFunc_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1428,7 +1428,7 @@ func TestWrapBedrockInvokeModel_Success(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},
@@ -1462,7 +1462,7 @@ func TestWrapBedrockInvokeModel_Blocked(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Mode:         "sandbox",
@@ -1496,7 +1496,7 @@ func TestWrapBedrockInvokeModel_LLMError(t *testing.T) {
 	defer server.Close()
 
 	axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "test-secret",
 		Cache:        axonflow.CacheConfig{Enabled: false},

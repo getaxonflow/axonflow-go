@@ -26,8 +26,7 @@ func TestCreateBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -63,8 +62,7 @@ func TestGetBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -95,8 +93,7 @@ func TestListBudgets(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -128,8 +125,7 @@ func TestListBudgetsWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -162,8 +158,7 @@ func TestUpdateBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -191,8 +186,7 @@ func TestDeleteBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -225,8 +219,7 @@ func TestGetBudgetStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -264,8 +257,7 @@ func TestGetBudgetAlerts(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -294,8 +286,7 @@ func TestCheckBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -332,8 +323,7 @@ func TestGetUsageSummary(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -365,8 +355,7 @@ func TestGetUsageBreakdown(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -403,8 +392,7 @@ func TestListUsageRecords(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -436,8 +424,7 @@ func TestGetPricing(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -481,7 +468,10 @@ func TestLastIndex(t *testing.T) {
 	}
 }
 
-func TestCostRequestWithAgentURLFallback(t *testing.T) {
+// Note: Tests for OrchestratorURL fallback were removed in v2.0.0 (ADR-026 Single Entry Point).
+// All routes now go through the single Endpoint field.
+
+func TestCostRequestUsesEndpoint(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/budgets/test-budget" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
@@ -494,51 +484,34 @@ func TestCostRequestWithAgentURLFallback(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Test with no OrchestratorURL - should fallback to agent URL with port replacement
+	// All routes go through single endpoint
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL, // httptest server URL like http://127.0.0.1:xxxxx
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		// OrchestratorURL not set - should use fallback logic
 	})
 
-	// The fallback logic will replace port with 8081, so this won't actually work
-	// but we're testing that the costRequest function handles the fallback correctly
-	_, err := client.GetBudget(context.Background(), "test-budget")
-	// Error expected since fallback will use wrong port
-	if err == nil {
-		t.Log("Request succeeded (unexpected but okay for coverage)")
+	budget, err := client.GetBudget(context.Background(), "test-budget")
+	if err != nil {
+		t.Fatalf("GetBudget failed: %v", err)
+	}
+
+	if budget.ID != "test-budget" {
+		t.Errorf("Expected budget ID 'test-budget', got '%s'", budget.ID)
 	}
 }
 
-func TestCostRequestWithURLWithoutPort(t *testing.T) {
-	// Test the fallback logic when URL has no port (appends :8081)
+func TestCostRequestWithEmptyEndpoint(t *testing.T) {
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://localhost", // No port
+		Endpoint:     "",
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
-		// OrchestratorURL not set
 	})
 
-	// This will fail to connect but exercises the URL construction logic
+	// This exercises the empty endpoint path
 	_, err := client.GetBudget(context.Background(), "test-budget")
 	if err == nil {
-		t.Error("Expected error when connecting to non-existent server")
-	}
-}
-
-func TestCostRequestWithEmptyAgentURL(t *testing.T) {
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     "",
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-		// OrchestratorURL not set
-	})
-
-	// This exercises the empty agent URL path
-	_, err := client.GetBudget(context.Background(), "test-budget")
-	if err == nil {
-		t.Error("Expected error when AgentURL is empty")
+		t.Error("Expected error when Endpoint is empty")
 	}
 }
 
@@ -565,8 +538,7 @@ func TestListBudgetsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -603,8 +575,7 @@ func TestGetBudgetAlertsWithNoLimit(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -637,8 +608,7 @@ func TestGetUsageSummaryWithPeriod(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -675,8 +645,7 @@ func TestGetUsageBreakdownWithPeriod(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -720,8 +689,7 @@ func TestListUsageRecordsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -762,8 +730,7 @@ func TestGetPricingWithNoParams(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})

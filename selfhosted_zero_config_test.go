@@ -29,7 +29,7 @@ func getZeroConfigTestConfig() AxonFlowConfig {
 	}
 
 	return AxonFlowConfig{
-		AgentURL:     agentURL,
+		Endpoint:     agentURL,
 		ClientID:     "default",
 		ClientSecret: "", // Empty - zero-config mode
 		Debug:        true,
@@ -50,7 +50,7 @@ func isLocalhostURL(url string) bool {
 // with empty client_secret for localhost endpoints
 func TestZeroConfig_ClientCreation_EmptySecret(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -66,7 +66,7 @@ func TestZeroConfig_ClientCreation_EmptySecret(t *testing.T) {
 // with whitespace-only client_secret for localhost endpoints
 func TestZeroConfig_ClientCreation_WhitespaceSecret(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -86,7 +86,7 @@ func TestZeroConfig_ClientCreation_WhitespaceSecret(t *testing.T) {
 // with empty user token in self-hosted mode
 func TestZeroConfig_GatewayMode_PreCheckEmptyToken(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -117,7 +117,7 @@ func TestZeroConfig_GatewayMode_PreCheckEmptyToken(t *testing.T) {
 // with whitespace-only user token
 func TestZeroConfig_GatewayMode_PreCheckWhitespaceToken(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -143,7 +143,7 @@ func TestZeroConfig_GatewayMode_PreCheckWhitespaceToken(t *testing.T) {
 // without any credentials
 func TestZeroConfig_GatewayMode_FullFlow(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -195,7 +195,7 @@ func TestZeroConfig_GatewayMode_FullFlow(t *testing.T) {
 // with empty user token in self-hosted mode
 func TestZeroConfig_ProxyMode_ExecuteQueryEmptyToken(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -233,7 +233,7 @@ func TestZeroConfig_ProxyMode_ExecuteQueryEmptyToken(t *testing.T) {
 // blocked even without authentication
 func TestZeroConfig_PolicyEnforcement_SQLInjection(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -264,7 +264,7 @@ func TestZeroConfig_PolicyEnforcement_SQLInjection(t *testing.T) {
 // mode (detected but not blocked). We verify detection occurred.
 func TestZeroConfig_PolicyEnforcement_PII(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -302,7 +302,7 @@ func TestZeroConfig_PolicyEnforcement_PII(t *testing.T) {
 // TestZeroConfig_HealthCheck tests that health check works without authentication
 func TestZeroConfig_HealthCheck(t *testing.T) {
 	config := getZeroConfigTestConfig()
-	if !isLocalhostURL(config.AgentURL) {
+	if !isLocalhostURL(config.Endpoint) {
 		t.Skip("Zero-config tests require localhost endpoint")
 	}
 
@@ -332,7 +332,7 @@ func TestZeroConfig_FirstTimeUser(t *testing.T) {
 
 	// First-time user - minimal configuration
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     agentURL,
+		Endpoint:     agentURL,
 		ClientID:     "first-time-user",
 		ClientSecret: "", // Empty - zero-config
 		Debug:        true,

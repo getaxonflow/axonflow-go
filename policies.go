@@ -315,7 +315,7 @@ func (c *AxonFlowClient) orchestratorPolicyRequest(method, path string, body int
 		reqBody = bytes.NewReader(bodyBytes)
 	}
 
-	fullURL := c.getOrchestratorURL() + path
+	fullURL := c.config.Endpoint + path
 
 	req, err := http.NewRequest(method, fullURL, reqBody)
 	if err != nil {
@@ -325,8 +325,8 @@ func (c *AxonFlowClient) orchestratorPolicyRequest(method, path string, body int
 	req.Header.Set("Content-Type", "application/json")
 
 	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.getOrchestratorURL(), "localhost") ||
-		strings.Contains(c.getOrchestratorURL(), "127.0.0.1")
+	isLocalhost := strings.Contains(c.config.Endpoint, "localhost") ||
+		strings.Contains(c.config.Endpoint, "127.0.0.1")
 	if !isLocalhost {
 		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
 		if c.config.LicenseKey != "" {
@@ -386,7 +386,7 @@ func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, re
 		reqBody = bytes.NewReader(bodyBytes)
 	}
 
-	fullURL := c.config.AgentURL + path
+	fullURL := c.config.Endpoint + path
 
 	req, err := http.NewRequest(method, fullURL, reqBody)
 	if err != nil {
@@ -396,8 +396,8 @@ func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, re
 	req.Header.Set("Content-Type", "application/json")
 
 	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") ||
-		strings.Contains(c.config.AgentURL, "127.0.0.1")
+	isLocalhost := strings.Contains(c.config.Endpoint, "localhost") ||
+		strings.Contains(c.config.Endpoint, "127.0.0.1")
 	if !isLocalhost {
 		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
 		if c.config.LicenseKey != "" {
@@ -448,7 +448,7 @@ func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, re
 
 // policyRequestRaw makes an HTTP request and returns raw bytes (for CSV export)
 func (c *AxonFlowClient) policyRequestRaw(method, path string) ([]byte, error) {
-	fullURL := c.config.AgentURL + path
+	fullURL := c.config.Endpoint + path
 
 	req, err := http.NewRequest(method, fullURL, nil)
 	if err != nil {
@@ -456,8 +456,8 @@ func (c *AxonFlowClient) policyRequestRaw(method, path string) ([]byte, error) {
 	}
 
 	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.AgentURL, "localhost") ||
-		strings.Contains(c.config.AgentURL, "127.0.0.1")
+	isLocalhost := strings.Contains(c.config.Endpoint, "localhost") ||
+		strings.Contains(c.config.Endpoint, "127.0.0.1")
 	if !isLocalhost {
 		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
 		if c.config.LicenseKey != "" {
@@ -797,7 +797,7 @@ func (c *AxonFlowClient) ListPolicyOverrides() ([]PolicyOverride, error) {
 // ListDynamicPolicies lists all dynamic policies with optional filtering.
 // Dynamic policies are stored on the Orchestrator (not Agent).
 func (c *AxonFlowClient) ListDynamicPolicies(options *ListDynamicPoliciesOptions) ([]DynamicPolicy, error) {
-	path := "/api/v1/policies/dynamic"
+	path := "/api/v1/dynamic-policies"
 	if options != nil {
 		path += options.buildQueryParams()
 	}
@@ -822,7 +822,7 @@ func (c *AxonFlowClient) GetDynamicPolicy(id string) (*DynamicPolicy, error) {
 	}
 
 	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("GET", "/api/v1/policies/dynamic/"+id, nil, &policy); err != nil {
+	if err := c.orchestratorPolicyRequest("GET", "/api/v1/dynamic-policies/"+id, nil, &policy); err != nil {
 		return nil, err
 	}
 
@@ -837,7 +837,7 @@ func (c *AxonFlowClient) CreateDynamicPolicy(req *CreateDynamicPolicyRequest) (*
 	}
 
 	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("POST", "/api/v1/policies/dynamic", req, &policy); err != nil {
+	if err := c.orchestratorPolicyRequest("POST", "/api/v1/dynamic-policies", req, &policy); err != nil {
 		return nil, err
 	}
 
@@ -852,7 +852,7 @@ func (c *AxonFlowClient) UpdateDynamicPolicy(id string, req *UpdateDynamicPolicy
 	}
 
 	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("PUT", "/api/v1/policies/dynamic/"+id, req, &policy); err != nil {
+	if err := c.orchestratorPolicyRequest("PUT", "/api/v1/dynamic-policies/"+id, req, &policy); err != nil {
 		return nil, err
 	}
 
@@ -866,7 +866,7 @@ func (c *AxonFlowClient) DeleteDynamicPolicy(id string) error {
 		log.Printf("[AxonFlow] Deleting dynamic policy: %s", id)
 	}
 
-	return c.orchestratorPolicyRequest("DELETE", "/api/v1/policies/dynamic/"+id, nil, nil)
+	return c.orchestratorPolicyRequest("DELETE", "/api/v1/dynamic-policies/"+id, nil, nil)
 }
 
 // ToggleDynamicPolicy toggles a dynamic policy's enabled status.
@@ -878,7 +878,7 @@ func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicP
 
 	body := map[string]bool{"enabled": enabled}
 	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("PATCH", "/api/v1/policies/dynamic/"+id, body, &policy); err != nil {
+	if err := c.orchestratorPolicyRequest("PATCH", "/api/v1/dynamic-policies/"+id, body, &policy); err != nil {
 		return nil, err
 	}
 
@@ -888,7 +888,7 @@ func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicP
 // GetEffectiveDynamicPolicies gets effective dynamic policies with tier inheritance applied.
 // Dynamic policies are stored on the Orchestrator (not Agent).
 func (c *AxonFlowClient) GetEffectiveDynamicPolicies(options *EffectivePoliciesOptions) ([]DynamicPolicy, error) {
-	path := "/api/v1/policies/dynamic/effective"
+	path := "/api/v1/dynamic-policies/effective"
 	if options != nil {
 		path += options.buildQueryParams()
 	}

@@ -30,7 +30,7 @@ import (
 func main() {
     // Simple initialization with license key
     client := axonflow.NewClient(axonflow.AxonFlowConfig{
-        AgentURL:   "https://staging-eu.getaxonflow.com",
+        Endpoint:   "https://staging-eu.getaxonflow.com",
         LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
     })
 
@@ -66,7 +66,7 @@ import (
 
 // Full configuration with all features
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:   "https://staging-eu.getaxonflow.com",
+    Endpoint:   "https://staging-eu.getaxonflow.com",
     LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
     Mode:       "production",  // or "sandbox"
     Debug:      true,          // Enable debug logging
@@ -104,7 +104,7 @@ import (
 func main() {
     // Self-hosted (localhost) - no license key needed!
     client := axonflow.NewClient(axonflow.AxonFlowConfig{
-        AgentURL: "http://localhost:8081",
+        Endpoint: "http://localhost:8081",
         // That's it - no authentication required for localhost
     })
 
@@ -181,7 +181,7 @@ Automatic retry on transient failures with exponential backoff:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL: "https://staging-eu.getaxonflow.com",
+    Endpoint: "https://staging-eu.getaxonflow.com",
     ClientID: "your-client-id",
     ClientSecret: "your-secret",
     Retry: axonflow.RetryConfig{
@@ -201,7 +201,7 @@ Reduce latency and load with intelligent caching:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL: "https://staging-eu.getaxonflow.com",
+    Endpoint: "https://staging-eu.getaxonflow.com",
     ClientID: "your-client-id",
     ClientSecret: "your-secret",
     Cache: axonflow.CacheConfig{
@@ -223,7 +223,7 @@ Never block your users if AxonFlow is unavailable:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL: "https://staging-eu.getaxonflow.com",
+    Endpoint: "https://staging-eu.getaxonflow.com",
     ClientID: "your-client-id",
     ClientSecret: "your-secret",
     Mode:     "production",  // Fail-open in production
@@ -251,7 +251,7 @@ import (
 
 // Initialize AxonFlow client
 axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:   "https://staging-eu.getaxonflow.com",
+    Endpoint:   "https://staging-eu.getaxonflow.com",
     LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
 })
 
@@ -590,7 +590,7 @@ For applications running in AWS VPC, use the private endpoint for sub-10ms laten
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:     "https://vpc-private-endpoint.getaxonflow.com:8443",  // VPC private endpoint
+    Endpoint:     "https://vpc-private-endpoint.getaxonflow.com:8443",  // VPC private endpoint
     ClientID:     "your-client-id",
     ClientSecret: "your-secret",
     Mode:         "production",
@@ -637,7 +637,7 @@ fmt.Printf("Result: %v\n", resp.Data)
    import "os"
 
    client := axonflow.NewClient(axonflow.AxonFlowConfig{
-       AgentURL:   os.Getenv("AXONFLOW_AGENT_URL"),
+       Endpoint:   os.Getenv("AXONFLOW_AGENT_URL"),
        LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
    })
    ```
@@ -660,7 +660,7 @@ fmt.Printf("Result: %v\n", resp.Data)
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `AgentURL` | `string` | Required | AxonFlow Agent endpoint URL |
+| `Endpoint` | `string` | Required | AxonFlow Agent endpoint URL |
 | `LicenseKey` | `string` | **Recommended** | License key for authentication |
 | `ClientID` | `string` | Deprecated | ⚠️ Legacy: Client ID (use LicenseKey instead) |
 | `ClientSecret` | `string` | Deprecated | ⚠️ Legacy: Client secret (use LicenseKey instead) |
@@ -682,7 +682,7 @@ If you're currently using `ClientID` and `ClientSecret`, migrate to license-base
 **Before:**
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:     "https://staging-eu.getaxonflow.com",
+    Endpoint:     "https://staging-eu.getaxonflow.com",
     ClientID:     os.Getenv("AXONFLOW_CLIENT_ID"),
     ClientSecret: os.Getenv("AXONFLOW_CLIENT_SECRET"),
 })
@@ -691,7 +691,7 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
 **After:**
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:   "https://staging-eu.getaxonflow.com",
+    Endpoint:   "https://staging-eu.getaxonflow.com",
     LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
 })
 ```

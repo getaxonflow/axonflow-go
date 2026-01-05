@@ -93,7 +93,7 @@ Set appropriate timeouts to prevent resource exhaustion:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:     agentURL,
+    Endpoint:     agentURL,
     ClientID:     clientID,
     ClientSecret: clientSecret,
     Timeout:      30 * time.Second, // Reasonable timeout
@@ -155,7 +155,7 @@ Use production mode for production deployments to enable fail-open strategy:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:     agentURL,
+    Endpoint:     agentURL,
     ClientID:     clientID,
     ClientSecret: clientSecret,
     Mode:         "production", // Fail-open if AxonFlow unavailable
@@ -168,7 +168,7 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    AgentURL:     agentURL,
+    Endpoint:     agentURL,
     ClientID:     clientID,
     ClientSecret: clientSecret,
     Debug:        os.Getenv("ENV") != "production", // Only in dev

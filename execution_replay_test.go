@@ -38,8 +38,7 @@ func TestListExecutions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -72,8 +71,7 @@ func TestListExecutionsWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -112,8 +110,7 @@ func TestGetExecution(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -151,8 +148,7 @@ func TestGetExecutionSteps(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -190,8 +186,7 @@ func TestGetExecutionTimeline(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -220,8 +215,7 @@ func TestExportExecution(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -253,8 +247,7 @@ func TestExportExecutionWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -282,8 +275,7 @@ func TestDeleteExecution(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -294,22 +286,10 @@ func TestDeleteExecution(t *testing.T) {
 	}
 }
 
-func TestGetOrchestratorURLFallback(t *testing.T) {
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     "http://localhost:8080",
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-		// No OrchestratorURL set
-	})
+// Note: Tests for getOrchestratorURL fallback were removed in v2.0.0 (ADR-026 Single Entry Point).
+// All routes now go through the single Endpoint field.
 
-	// The getOrchestratorURL method should fall back to agent host with port 8081
-	// We can test this indirectly by checking that client is created correctly
-	if client.config.AgentURL != "http://localhost:8080" {
-		t.Error("Expected agent URL to be set")
-	}
-}
-
-func TestGetOrchestratorURLWithExplicitURL(t *testing.T) {
+func TestEndpointUsedForExecutionReplay(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/executions" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
@@ -322,10 +302,9 @@ func TestGetOrchestratorURLWithExplicitURL(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        "http://different-host:8080",
-		OrchestratorURL: server.URL, // Explicit orchestrator URL
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL, // All routes go through single endpoint
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.ListExecutions(nil)
@@ -336,21 +315,6 @@ func TestGetOrchestratorURLWithExplicitURL(t *testing.T) {
 	if resp.Total != 0 {
 		t.Errorf("Expected total 0, got %d", resp.Total)
 	}
-}
-
-func TestGetOrchestratorURLWithInvalidAgentURL(t *testing.T) {
-	client := NewClient(AxonFlowConfig{
-		AgentURL:     "://invalid-url", // Invalid URL
-		ClientID:     "test-client",
-		ClientSecret: "test-secret",
-		// No OrchestratorURL
-	})
-
-	// This should fallback to localhost:8081 when parsing fails
-	// We just want to verify the URL parsing fallback works without crashing
-	// The actual connection may or may not fail depending on if localhost:8081 is available
-	_, _ = client.ListExecutions(nil)
-	// Test passes as long as we don't panic during URL parsing
 }
 
 func TestListExecutionsWithAllOptions(t *testing.T) {
@@ -385,8 +349,7 @@ func TestListExecutionsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -417,8 +380,7 @@ func TestListExecutionsError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -437,8 +399,7 @@ func TestGetExecutionNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -457,8 +418,7 @@ func TestGetExecutionError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -477,8 +437,7 @@ func TestGetExecutionStepsNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -497,8 +456,7 @@ func TestGetExecutionStepsError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -517,8 +475,7 @@ func TestGetExecutionTimelineNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -537,8 +494,7 @@ func TestGetExecutionTimelineError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -557,8 +513,7 @@ func TestExportExecutionNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -577,8 +532,7 @@ func TestExportExecutionError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -615,8 +569,7 @@ func TestExportExecutionWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -645,8 +598,7 @@ func TestDeleteExecutionNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -665,8 +617,7 @@ func TestDeleteExecutionError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -687,8 +638,7 @@ func TestDeleteExecutionOKStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -712,8 +662,7 @@ func TestListExecutionsWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 		Debug:           true, // Enable debug mode
@@ -745,8 +694,7 @@ func TestGetExecutionWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 		Debug:           true,
@@ -774,8 +722,7 @@ func TestGetExecutionStepsWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 		Debug:           true,
@@ -803,8 +750,7 @@ func TestGetExecutionTimelineWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 		Debug:           true,
@@ -832,8 +778,7 @@ func TestExportExecutionWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 		Debug:           true,
@@ -858,8 +803,7 @@ func TestDeleteExecutionWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 		Debug:           true,

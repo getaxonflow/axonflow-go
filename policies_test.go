@@ -68,7 +68,7 @@ func TestListStaticPolicies(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -105,7 +105,7 @@ func TestListStaticPoliciesWithFilters(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -138,7 +138,7 @@ func TestGetStaticPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -164,7 +164,7 @@ func TestCreateStaticPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -200,7 +200,7 @@ func TestUpdateStaticPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -230,7 +230,7 @@ func TestDeleteStaticPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -255,7 +255,7 @@ func TestToggleStaticPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -286,7 +286,7 @@ func TestGetEffectiveStaticPolicies(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -319,7 +319,7 @@ func TestTestPattern(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -356,7 +356,7 @@ func TestGetStaticPolicyVersions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -385,7 +385,7 @@ func TestCreatePolicyOverride(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -415,7 +415,7 @@ func TestDeletePolicyOverride(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	})
@@ -429,9 +429,9 @@ func TestDeletePolicyOverride(t *testing.T) {
 // TestListDynamicPolicies tests listing dynamic policies
 func TestListDynamicPolicies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Dynamic policies are on orchestrator at /api/v1/policies/dynamic
-		if r.URL.Path != "/api/v1/policies/dynamic" {
-			t.Errorf("Expected path /api/v1/policies/dynamic, got %s", r.URL.Path)
+		// Dynamic policies are on orchestrator at /api/v1/dynamic-policies
+		if r.URL.Path != "/api/v1/dynamic-policies" {
+			t.Errorf("Expected path /api/v1/dynamic-policies, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]DynamicPolicy{sampleDynamicPolicy})
@@ -439,8 +439,7 @@ func TestListDynamicPolicies(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Dynamic policies are on orchestrator
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -457,9 +456,9 @@ func TestListDynamicPolicies(t *testing.T) {
 // TestGetDynamicPolicy tests getting a specific dynamic policy
 func TestGetDynamicPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Dynamic policies are on orchestrator at /api/v1/policies/dynamic/{id}
-		if r.URL.Path != "/api/v1/policies/dynamic/dpol_456" {
-			t.Errorf("Expected path /api/v1/policies/dynamic/dpol_456, got %s", r.URL.Path)
+		// Dynamic policies are on orchestrator at /api/v1/dynamic-policies/{id}
+		if r.URL.Path != "/api/v1/dynamic-policies/dpol_456" {
+			t.Errorf("Expected path /api/v1/dynamic-policies/dpol_456, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(sampleDynamicPolicy)
@@ -467,8 +466,7 @@ func TestGetDynamicPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Dynamic policies are on orchestrator
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -485,9 +483,9 @@ func TestGetDynamicPolicy(t *testing.T) {
 // TestCreateDynamicPolicy tests creating a dynamic policy
 func TestCreateDynamicPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Dynamic policies are on orchestrator at POST /api/v1/policies/dynamic
-		if r.Method != "POST" || r.URL.Path != "/api/v1/policies/dynamic" {
-			t.Errorf("Expected POST /api/v1/policies/dynamic, got %s %s", r.Method, r.URL.Path)
+		// Dynamic policies are on orchestrator at POST /api/v1/dynamic-policies
+		if r.Method != "POST" || r.URL.Path != "/api/v1/dynamic-policies" {
+			t.Errorf("Expected POST /api/v1/dynamic-policies, got %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(sampleDynamicPolicy)
@@ -495,8 +493,7 @@ func TestCreateDynamicPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Dynamic policies are on orchestrator
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -526,17 +523,16 @@ func TestCreateDynamicPolicy(t *testing.T) {
 // TestDeleteDynamicPolicy tests deleting a dynamic policy
 func TestDeleteDynamicPolicy(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Dynamic policies are on orchestrator at DELETE /api/v1/policies/dynamic/{id}
-		if r.Method != "DELETE" || r.URL.Path != "/api/v1/policies/dynamic/dpol_456" {
-			t.Errorf("Expected DELETE /api/v1/policies/dynamic/dpol_456, got %s %s", r.Method, r.URL.Path)
+		// Dynamic policies are on orchestrator at DELETE /api/v1/dynamic-policies/{id}
+		if r.Method != "DELETE" || r.URL.Path != "/api/v1/dynamic-policies/dpol_456" {
+			t.Errorf("Expected DELETE /api/v1/dynamic-policies/dpol_456, got %s %s", r.Method, r.URL.Path)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL, // Dynamic policies are on orchestrator
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})
@@ -550,8 +546,8 @@ func TestDeleteDynamicPolicy(t *testing.T) {
 // TestGetEffectiveDynamicPolicies tests getting effective dynamic policies
 func TestGetEffectiveDynamicPolicies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/policies/dynamic/effective" {
-			t.Errorf("Expected path /api/v1/policies/dynamic/effective, got %s", r.URL.Path)
+		if r.URL.Path != "/api/v1/dynamic-policies/effective" {
+			t.Errorf("Expected path /api/v1/dynamic-policies/effective, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode([]DynamicPolicy{sampleDynamicPolicy})
@@ -559,8 +555,7 @@ func TestGetEffectiveDynamicPolicies(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		AgentURL:        server.URL,
-		OrchestratorURL: server.URL,
+		Endpoint:        server.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
 	})

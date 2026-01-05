@@ -36,7 +36,7 @@ func getTestConfig(t *testing.T) AxonFlowConfig {
 	}
 
 	return AxonFlowConfig{
-		AgentURL:     agentURL,
+		Endpoint:     agentURL,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Debug:        true,

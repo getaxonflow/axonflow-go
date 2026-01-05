@@ -167,7 +167,7 @@ func (c *AxonFlowClient) SearchAuditLogs(ctx context.Context, req *AuditSearchRe
 		return nil, fmt.Errorf("failed to marshal audit search request: %w", err)
 	}
 
-	fullURL := c.getOrchestratorURL() + "/api/v1/audit/search"
+	fullURL := c.config.Endpoint + "/api/v1/audit/search"
 
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", fullURL, bytes.NewReader(bodyBytes))
 	if err != nil {
@@ -272,7 +272,7 @@ func (c *AxonFlowClient) GetAuditLogsByTenant(ctx context.Context, tenantID stri
 	}
 
 	fullURL := fmt.Sprintf("%s/api/v1/audit/tenant/%s?limit=%d&offset=%d",
-		c.getOrchestratorURL(), tenantID, limit, offset)
+		c.config.Endpoint, tenantID, limit, offset)
 
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {

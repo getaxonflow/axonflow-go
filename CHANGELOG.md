@@ -5,6 +5,44 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-01-05
+
+### Breaking Changes
+
+- **BREAKING**: Renamed `AgentURL` to `Endpoint` in `AxonFlowConfig`
+- **BREAKING**: Removed `OrchestratorURL` and `PortalURL` config options (Agent now proxies all routes per ADR-026)
+- **BREAKING**: Dynamic policy API path changed from `/api/v1/policies/dynamic` to `/api/v1/dynamic-policies`
+
+### Changed
+
+- All SDK methods now route through single Agent endpoint
+- Simplified configuration - only `Endpoint` field needed
+- Removed `getOrchestratorURL()` and `getPortalURL()` helper methods
+
+### Migration Guide
+
+**Before (v1.x):**
+```go
+client := axonflow.NewClient(axonflow.AxonFlowConfig{
+    AgentURL:        "http://localhost:8080",
+    OrchestratorURL: "http://localhost:8081",
+    PortalURL:       "http://localhost:8082",
+    ClientID:        "my-client",
+    ClientSecret:    "my-secret",
+})
+```
+
+**After (v2.x):**
+```go
+client := axonflow.NewClient(axonflow.AxonFlowConfig{
+    Endpoint:     "http://localhost:8080",
+    ClientID:     "my-client",
+    ClientSecret: "my-secret",
+})
+```
+
+---
+
 ## [1.18.0] - 2026-01-05
 
 ### Added

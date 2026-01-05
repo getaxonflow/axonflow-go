@@ -42,7 +42,7 @@ func TestAuthHeaders_NotSentWithoutCredentials(t *testing.T) {
 
 	// Create client WITHOUT credentials
 	client := NewClient(AxonFlowConfig{
-		AgentURL: server.URL,
+		Endpoint: server.URL,
 		// No ClientID/ClientSecret/LicenseKey
 		Cache: CacheConfig{Enabled: false},
 	})
@@ -83,7 +83,7 @@ func TestAuthHeaders_SentWithCredentials(t *testing.T) {
 
 	// Create client WITH credentials
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "secret",
 		LicenseKey:   "license-key",
@@ -121,7 +121,7 @@ func TestAuthHeaders_OnlyLicenseKey(t *testing.T) {
 
 	// Create client with ONLY LicenseKey
 	client := NewClient(AxonFlowConfig{
-		AgentURL:   server.URL,
+		Endpoint:   server.URL,
 		LicenseKey: "license-key",
 		Cache:      CacheConfig{Enabled: false},
 	})
@@ -157,7 +157,7 @@ func TestAuthHeaders_OnlyClientSecret(t *testing.T) {
 
 	// Create client with ONLY ClientSecret
 	client := NewClient(AxonFlowConfig{
-		AgentURL:     server.URL,
+		Endpoint:     server.URL,
 		ClientID:     "test",
 		ClientSecret: "secret",
 		Cache:        CacheConfig{Enabled: false},

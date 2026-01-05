@@ -21,18 +21,16 @@ import (
 
 // AxonFlowConfig represents configuration for the AxonFlow client
 type AxonFlowConfig struct {
-	AgentURL        string        // Required: AxonFlow Agent URL
-	OrchestratorURL string        // Optional: Orchestrator URL (for Execution Replay API). Defaults to agent URL with port 8081.
-	PortalURL       string        // Optional: Customer Portal URL (for enterprise PR workflow). Defaults to agent URL with port 8082.
-	ClientID        string        // Optional: Client ID (required for enterprise features)
-	ClientSecret    string        // Optional: Client secret (required for enterprise features)
-	LicenseKey      string        // Optional: License key (alternative to ClientID/ClientSecret)
-	Mode            string        // "production" | "sandbox" (default: "production")
-	Debug           bool          // Enable debug logging (default: false)
-	Timeout         time.Duration // Request timeout (default: 60s)
-	MapTimeout      time.Duration // Timeout for MAP operations (default: 120s) - MAP involves multiple LLM calls
-	Retry           RetryConfig   // Retry configuration
-	Cache           CacheConfig   // Cache configuration
+	Endpoint     string        // Required: AxonFlow endpoint URL (Agent proxies all routes since ADR-026)
+	ClientID     string        // Optional: Client ID (required for enterprise features)
+	ClientSecret string        // Optional: Client secret (required for enterprise features)
+	LicenseKey   string        // Optional: License key (alternative to ClientID/ClientSecret)
+	Mode         string        // "production" | "sandbox" (default: "production")
+	Debug        bool          // Enable debug logging (default: false)
+	Timeout      time.Duration // Request timeout (default: 60s)
+	MapTimeout   time.Duration // Timeout for MAP operations (default: 120s) - MAP involves multiple LLM calls
+	Retry        RetryConfig   // Retry configuration
+	Cache        CacheConfig   // Cache configuration
 }
 
 // RetryConfig configures retry behavior
@@ -371,16 +369,16 @@ func NewClient(config AxonFlowConfig) *AxonFlowClient {
 	}
 
 	if config.Debug {
-		log.Printf("[AxonFlow] Client initialized - Mode: %s, Endpoint: %s, MapTimeout: %v", config.Mode, config.AgentURL, config.MapTimeout)
+		log.Printf("[AxonFlow] Client initialized - Mode: %s, Endpoint: %s, MapTimeout: %v", config.Mode, config.Endpoint, config.MapTimeout)
 	}
 
 	return client
 }
 
 // NewClientSimple creates a client with simple parameters (backward compatible)
-func NewClientSimple(agentURL, clientID, clientSecret string) *AxonFlowClient {
+func NewClientSimple(endpoint, clientID, clientSecret string) *AxonFlowClient {
 	return NewClient(AxonFlowConfig{
-		AgentURL:     agentURL,
+		Endpoint:     endpoint,
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 	})
@@ -393,7 +391,7 @@ func Sandbox(apiKey string) *AxonFlowClient {
 	}
 
 	return NewClient(AxonFlowConfig{
-		AgentURL:     "https://staging-eu.getaxonflow.com",
+		Endpoint:     "https://staging-eu.getaxonflow.com",
 		ClientID:     apiKey,
 		ClientSecret: apiKey,
 		Mode:         "sandbox",
@@ -509,7 +507,7 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/request", bytes.NewReader(reqBody))
+	httpReq, err := http.NewRequest("POST", c.config.Endpoint+"/api/request", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -651,7 +649,7 @@ func (c *AxonFlowClient) isAxonFlowError(err error) bool {
 
 // HealthCheck checks if AxonFlow Agent is healthy
 func (c *AxonFlowClient) HealthCheck() error {
-	resp, err := c.httpClient.Get(c.config.AgentURL + "/health")
+	resp, err := c.httpClient.Get(c.config.Endpoint + "/health")
 	if err != nil {
 		return fmt.Errorf("health check failed: %w", err)
 	}
@@ -668,23 +666,11 @@ func (c *AxonFlowClient) HealthCheck() error {
 	return nil
 }
 
-// OrchestratorHealthCheck checks if AxonFlow Orchestrator is healthy
+// OrchestratorHealthCheck checks orchestrator health via Agent proxy.
+// Deprecated: Use HealthCheck() instead - Agent proxies all routes since ADR-026.
 func (c *AxonFlowClient) OrchestratorHealthCheck() error {
-	resp, err := c.httpClient.Get(c.getOrchestratorURL() + "/health")
-	if err != nil {
-		return fmt.Errorf("orchestrator health check failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("orchestrator not healthy: status %d", resp.StatusCode)
-	}
-
-	if c.config.Debug {
-		log.Println("[AxonFlow] Orchestrator health check passed")
-	}
-
-	return nil
+	// Since ADR-026, Agent proxies to Orchestrator, so we just call Agent health
+	return c.HealthCheck()
 }
 
 // getMetadataKeys returns the keys from a metadata map for debugging
@@ -701,7 +687,7 @@ func getMetadataKeys(metadata map[string]interface{}) []string {
 
 // ListConnectors returns all available MCP connectors from the marketplace
 func (c *AxonFlowClient) ListConnectors() ([]ConnectorMetadata, error) {
-	resp, err := c.httpClient.Get(c.getOrchestratorURL() + "/api/v1/connectors")
+	resp, err := c.httpClient.Get(c.config.Endpoint + "/api/v1/connectors")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list connectors: %w", err)
 	}
@@ -730,7 +716,7 @@ func (c *AxonFlowClient) ListConnectors() ([]ConnectorMetadata, error) {
 
 // GetConnector returns details for a specific connector by ID
 func (c *AxonFlowClient) GetConnector(connectorID string) (*ConnectorMetadata, error) {
-	url := fmt.Sprintf("%s/api/v1/connectors/%s", c.getOrchestratorURL(), connectorID)
+	url := fmt.Sprintf("%s/api/v1/connectors/%s", c.config.Endpoint, connectorID)
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get connector: %w", err)
@@ -760,7 +746,7 @@ func (c *AxonFlowClient) GetConnector(connectorID string) (*ConnectorMetadata, e
 
 // GetConnectorHealth returns the health status of an installed connector
 func (c *AxonFlowClient) GetConnectorHealth(connectorID string) (*ConnectorHealthStatus, error) {
-	url := fmt.Sprintf("%s/api/v1/connectors/%s/health", c.getOrchestratorURL(), connectorID)
+	url := fmt.Sprintf("%s/api/v1/connectors/%s/health", c.config.Endpoint, connectorID)
 	resp, err := c.httpClient.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get connector health: %w", err)
@@ -795,8 +781,8 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 		return fmt.Errorf("failed to marshal install request: %w", err)
 	}
 
-	// Connector install is on Orchestrator: POST /api/v1/connectors/{id}/install
-	url := fmt.Sprintf("%s/api/v1/connectors/%s/install", c.getOrchestratorURL(), req.ConnectorID)
+	// Connector install via Agent proxy: POST /api/v1/connectors/{id}/install
+	url := fmt.Sprintf("%s/api/v1/connectors/%s/install", c.config.Endpoint, req.ConnectorID)
 	httpReq, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to create install request: %w", err)
@@ -833,7 +819,7 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 
 // UninstallConnector removes an installed MCP connector
 func (c *AxonFlowClient) UninstallConnector(connectorName string) error {
-	url := fmt.Sprintf("%s/api/v1/connectors/%s", c.getOrchestratorURL(), connectorName)
+	url := fmt.Sprintf("%s/api/v1/connectors/%s", c.config.Endpoint, connectorName)
 	httpReq, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create uninstall request: %w", err)
@@ -951,7 +937,7 @@ func (c *AxonFlowClient) executeMapRequest(req ClientRequest) (*ClientResponse, 
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/request", bytes.NewReader(reqBody))
+	httpReq, err := http.NewRequest("POST", c.config.Endpoint+"/api/request", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -1109,7 +1095,7 @@ func (c *AxonFlowClient) ExecutePlan(planID string, userToken ...string) (*PlanE
 
 // GetPlanStatus retrieves the status of a running or completed plan
 func (c *AxonFlowClient) GetPlanStatus(planID string) (*PlanExecutionResponse, error) {
-	resp, err := c.httpClient.Get(c.config.AgentURL + "/api/plans/" + planID)
+	resp, err := c.httpClient.Get(c.config.Endpoint + "/api/plans/" + planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plan status: %w", err)
 	}
@@ -1205,7 +1191,7 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 		return nil, fmt.Errorf("failed to marshal pre-check request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/policy/pre-check", bytes.NewReader(reqBytes))
+	httpReq, err := http.NewRequest("POST", c.config.Endpoint+"/api/policy/pre-check", bytes.NewReader(reqBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create pre-check request: %w", err)
 	}
@@ -1356,7 +1342,7 @@ func (c *AxonFlowClient) AuditLLMCall(
 		return nil, fmt.Errorf("failed to marshal audit request: %w", err)
 	}
 
-	httpReq, err := http.NewRequest("POST", c.config.AgentURL+"/api/audit/llm-call", bytes.NewReader(reqBytes))
+	httpReq, err := http.NewRequest("POST", c.config.Endpoint+"/api/audit/llm-call", bytes.NewReader(reqBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create audit request: %w", err)
 	}
@@ -1465,7 +1451,7 @@ func (c *AxonFlowClient) LoginToPortal(orgID, password string) (*PortalLoginResp
 		return nil, fmt.Errorf("failed to marshal login request: %w", err)
 	}
 
-	fullURL := c.getPortalURL() + "/api/v1/auth/login"
+	fullURL := c.config.Endpoint + "/api/v1/auth/login"
 
 	req, err := http.NewRequest("POST", fullURL, bytes.NewReader(bodyBytes))
 	if err != nil {
@@ -1529,7 +1515,7 @@ func (c *AxonFlowClient) LogoutFromPortal() error {
 		return nil // Already logged out
 	}
 
-	fullURL := c.getPortalURL() + "/api/v1/auth/logout"
+	fullURL := c.config.Endpoint + "/api/v1/auth/logout"
 
 	req, err := http.NewRequest("POST", fullURL, nil)
 	if err != nil {

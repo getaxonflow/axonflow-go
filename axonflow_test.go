@@ -7,7 +7,7 @@ import (
 
 func TestNewClient(t *testing.T) {
 	config := AxonFlowConfig{
-		AgentURL:     "https://test.example.com",
+		Endpoint:     "https://test.example.com",
 		ClientID:     "test-client",
 		ClientSecret: "test-secret",
 	}
@@ -51,8 +51,8 @@ func TestNewClientSimple(t *testing.T) {
 		t.Fatal("Expected client to be created, got nil")
 	}
 
-	if client.config.AgentURL != "https://test.example.com" {
-		t.Errorf("Expected AgentURL 'https://test.example.com', got '%s'", client.config.AgentURL)
+	if client.config.Endpoint != "https://test.example.com" {
+		t.Errorf("Expected Endpoint 'https://test.example.com', got '%s'", client.config.Endpoint)
 	}
 
 	if client.config.ClientID != "client-id" {
@@ -284,7 +284,7 @@ func TestConnectorMetadataStruct(t *testing.T) {
 func TestConfigurationEdgeCases(t *testing.T) {
 	// Test that configuration with zero values gets defaults
 	config := AxonFlowConfig{
-		AgentURL:     "https://test.example.com",
+		Endpoint:     "https://test.example.com",
 		ClientID:     "test",
 		ClientSecret: "secret",
 		Timeout:      0, // Should get default
@@ -322,7 +322,7 @@ func TestConfigurationEdgeCases(t *testing.T) {
 func TestLicenseKeyAuth(t *testing.T) {
 	// Test that license key is properly configured
 	config := AxonFlowConfig{
-		AgentURL:   "https://test.example.com",
+		Endpoint:   "https://test.example.com",
 		LicenseKey: "test-license-key-abc123",
 	}
 
@@ -340,7 +340,7 @@ func TestLicenseKeyAuth(t *testing.T) {
 func TestClientIDAuthBackwardCompatibility(t *testing.T) {
 	// Test backward compatibility with ClientID/ClientSecret
 	config := AxonFlowConfig{
-		AgentURL:     "https://test.example.com",
+		Endpoint:     "https://test.example.com",
 		ClientID:     "legacy-client-id",
 		ClientSecret: "legacy-secret",
 	}
@@ -363,7 +363,7 @@ func TestClientIDAuthBackwardCompatibility(t *testing.T) {
 func TestLicenseKeyPrefersOverClientID(t *testing.T) {
 	// Test that license key is used when both are provided
 	config := AxonFlowConfig{
-		AgentURL:     "https://test.example.com",
+		Endpoint:     "https://test.example.com",
 		ClientID:     "legacy-client-id",
 		ClientSecret: "legacy-secret",
 		LicenseKey:   "new-license-key",
