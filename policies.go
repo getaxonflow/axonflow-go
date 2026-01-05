@@ -36,6 +36,9 @@ const (
 	CategoryCodeUnsafe     PolicyCategory = "code-unsafe"
 	CategoryCodeCompliance PolicyCategory = "code-compliance"
 
+	// Sensitive data category
+	CategorySensitiveData PolicyCategory = "sensitive-data"
+
 	// Dynamic policy categories
 	CategoryDynamicRisk       PolicyCategory = "dynamic-risk"
 	CategoryDynamicCompliance PolicyCategory = "dynamic-compliance"

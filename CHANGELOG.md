@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sensitive Data Category**: Added `CategorySensitiveData` to `PolicyCategory` enum for policies that return `sensitive-data` category
 - **Provider Restrictions for Compliance**: Support for `allowed_providers` in dynamic policy action config
   - Specify allowed providers via `DynamicPolicyAction.Config["allowed_providers"]`
   - Enables GDPR, HIPAA, and RBI compliance by restricting LLM routing to specific providers
