@@ -47,19 +47,19 @@ jobs:
         body: |
           ## What's New in ${{ steps.extract_notes.outputs.version }}
 
-          See [CHANGELOG.md](https://github.com/getaxonflow/axonflow-go/blob/main/CHANGELOG.md) for details.
+          See [CHANGELOG.md](https://github.com/getaxonflow/axonflow-sdk-go/blob/main/CHANGELOG.md) for details.
 
           ## Installation
 
           ```bash
-          go get github.com/getaxonflow/axonflow-go@${{ steps.extract_notes.outputs.version }}
+          go get github.com/getaxonflow/axonflow-sdk-go/v2@${{ steps.extract_notes.outputs.version }}
           ```
 
           ## Documentation
 
-          - [Go Package Documentation](https://pkg.go.dev/github.com/getaxonflow/axonflow-go@${{ steps.extract_notes.outputs.version }})
-          - [README](https://github.com/getaxonflow/axonflow-go#readme)
-          - [Examples](https://github.com/getaxonflow/axonflow-go/tree/main/examples)
+          - [Go Package Documentation](https://pkg.go.dev/github.com/getaxonflow/axonflow-sdk-go/v2@${{ steps.extract_notes.outputs.version }})
+          - [README](https://github.com/getaxonflow/axonflow-sdk-go#readme)
+          - [Examples](https://github.com/getaxonflow/axonflow-sdk-go/tree/main/examples)
 
         draft: false
         prerelease: false
@@ -73,4 +73,4 @@ jobs:
     - name: Trigger pkg.go.dev update
       run: |
         VERSION=${GITHUB_REF#refs/tags/}
-        curl https://proxy.golang.org/github.com/getaxonflow/axonflow-go/@v/$VERSION.info
+        curl https://proxy.golang.org/github.com/getaxonflow/axonflow-sdk-go/v2/@v/$VERSION.info
