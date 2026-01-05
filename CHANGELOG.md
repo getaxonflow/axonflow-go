@@ -5,7 +5,7 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.0] - 2026-01-05
+## [2.1.0] - 2026-01-06
 
 ### Added
 
@@ -19,10 +19,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Go Module Path**: Updated module path to `github.com/getaxonflow/axonflow-sdk-go/v2` for Go semantic versioning compliance
+  - Go requires `/v2` suffix in module path for major versions >= 2
+  - All imports now use the `/v2` path
 - **ToggleDynamicPolicy HTTP Method**: Changed from PATCH to PUT to match API specification
 - **Dynamic Policy Response Parsing**: Fixed `ListDynamicPolicies`, `GetDynamicPolicy`, `CreateDynamicPolicy`, `UpdateDynamicPolicy`, `ToggleDynamicPolicy`, and `GetEffectiveDynamicPolicies` to correctly parse wrapped API responses
   - API returns `{"policies": [...]}` and `{"policy": {...}}` wrappers
   - Added `dynamicPoliciesResponse` and `dynamicPolicyResponse` wrapper structs
+
+### Migration
+
+Update your imports from:
+```go
+import "github.com/getaxonflow/axonflow-sdk-go"
+```
+
+To:
+```go
+import "github.com/getaxonflow/axonflow-sdk-go/v2"
+```
 
 ## [2.0.0] - 2026-01-05
 
