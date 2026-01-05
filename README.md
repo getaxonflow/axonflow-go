@@ -245,8 +245,8 @@ Wrap your LLM clients with automatic AxonFlow governance using the interceptors 
 import (
     "context"
     "github.com/sashabaranov/go-openai"
-    "github.com/getaxonflow/axonflow-sdk-go"
-    "github.com/getaxonflow/axonflow-sdk-go/interceptors"
+    "github.com/getaxonflow/axonflow-sdk-go/v2"
+    "github.com/getaxonflow/axonflow-sdk-go/v2/interceptors"
 )
 
 // Initialize AxonFlow client
@@ -297,8 +297,8 @@ if err != nil {
 ```go
 import (
     "context"
-    "github.com/getaxonflow/axonflow-sdk-go"
-    "github.com/getaxonflow/axonflow-sdk-go/interceptors"
+    "github.com/getaxonflow/axonflow-sdk-go/v2"
+    "github.com/getaxonflow/axonflow-sdk-go/v2/interceptors"
 )
 
 // Create Anthropic interceptor
