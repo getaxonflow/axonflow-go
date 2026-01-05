@@ -434,7 +434,11 @@ func TestListDynamicPolicies(t *testing.T) {
 			t.Errorf("Expected path /api/v1/dynamic-policies, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]DynamicPolicy{sampleDynamicPolicy})
+		// Agent proxy (Issue #886) returns {"policies": [...]} wrapper
+		resp := map[string]interface{}{
+			"policies": []DynamicPolicy{sampleDynamicPolicy},
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -461,7 +465,11 @@ func TestGetDynamicPolicy(t *testing.T) {
 			t.Errorf("Expected path /api/v1/dynamic-policies/dpol_456, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(sampleDynamicPolicy)
+		// Agent proxy (Issue #886) returns {"policy": {...}} wrapper
+		resp := map[string]interface{}{
+			"policy": sampleDynamicPolicy,
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -488,7 +496,11 @@ func TestCreateDynamicPolicy(t *testing.T) {
 			t.Errorf("Expected POST /api/v1/dynamic-policies, got %s %s", r.Method, r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(sampleDynamicPolicy)
+		// Agent proxy (Issue #886) returns {"policy": {...}} wrapper
+		resp := map[string]interface{}{
+			"policy": sampleDynamicPolicy,
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 
@@ -550,7 +562,11 @@ func TestGetEffectiveDynamicPolicies(t *testing.T) {
 			t.Errorf("Expected path /api/v1/dynamic-policies/effective, got %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]DynamicPolicy{sampleDynamicPolicy})
+		// Agent proxy (Issue #886) returns {"policies": [...]} wrapper
+		resp := map[string]interface{}{
+			"policies": []DynamicPolicy{sampleDynamicPolicy},
+		}
+		json.NewEncoder(w).Encode(resp)
 	}))
 	defer server.Close()
 

@@ -923,10 +923,11 @@ func (c *AxonFlowClient) GetEffectiveDynamicPolicies(options *EffectivePoliciesO
 		log.Printf("[AxonFlow] Getting effective dynamic policies: %s", path)
 	}
 
-	var policies []DynamicPolicy
-	if err := c.orchestratorPolicyRequest("GET", path, nil, &policies); err != nil {
+	// Agent proxy (Issue #886) returns {"policies": [...]} wrapper
+	var response dynamicPoliciesResponse
+	if err := c.orchestratorPolicyRequest("GET", path, nil, &response); err != nil {
 		return nil, err
 	}
 
-	return policies, nil
+	return response.Policies, nil
 }
