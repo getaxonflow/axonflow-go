@@ -907,7 +907,7 @@ func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicP
 
 	body := map[string]bool{"enabled": enabled}
 	var response dynamicPolicyResponse
-	if err := c.orchestratorPolicyRequest("PATCH", "/api/v1/dynamic-policies/"+id, body, &response); err != nil {
+	if err := c.orchestratorPolicyRequest("PUT", "/api/v1/dynamic-policies/"+id, body, &response); err != nil {
 		return nil, err
 	}
 
