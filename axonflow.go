@@ -209,6 +209,8 @@ type PolicyApprovalResult struct {
 	ContextID string `json:"context_id"`
 	// Approved indicates whether the request was approved
 	Approved bool `json:"approved"`
+	// RequiresRedaction indicates whether response requires redaction (PII detected with redact action)
+	RequiresRedaction bool `json:"requires_redaction,omitempty"`
 	// ApprovedData contains filtered/approved data to send to LLM
 	ApprovedData map[string]interface{} `json:"approved_data"`
 	// Policies lists the policies that were evaluated
@@ -1231,11 +1233,12 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 
 	// Parse response
 	var rawResp struct {
-		ContextID    string                 `json:"context_id"`
-		Approved     bool                   `json:"approved"`
-		ApprovedData map[string]interface{} `json:"approved_data"`
-		Policies     []string               `json:"policies"`
-		RateLimit    *struct {
+		ContextID         string                 `json:"context_id"`
+		Approved          bool                   `json:"approved"`
+		RequiresRedaction bool                   `json:"requires_redaction"`
+		ApprovedData      map[string]interface{} `json:"approved_data"`
+		Policies          []string               `json:"policies"`
+		RateLimit         *struct {
 			Limit     int    `json:"limit"`
 			Remaining int    `json:"remaining"`
 			ResetAt   string `json:"reset_at"`
@@ -1259,12 +1262,13 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 	}
 
 	result := &PolicyApprovalResult{
-		ContextID:    rawResp.ContextID,
-		Approved:     rawResp.Approved,
-		ApprovedData: rawResp.ApprovedData,
-		Policies:     rawResp.Policies,
-		ExpiresAt:    expiresAt,
-		BlockReason:  rawResp.BlockReason,
+		ContextID:         rawResp.ContextID,
+		Approved:          rawResp.Approved,
+		RequiresRedaction: rawResp.RequiresRedaction,
+		ApprovedData:      rawResp.ApprovedData,
+		Policies:          rawResp.Policies,
+		ExpiresAt:         expiresAt,
+		BlockReason:       rawResp.BlockReason,
 	}
 
 	// Parse rate limit info if present
