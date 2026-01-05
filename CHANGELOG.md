@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: Removed `OrchestratorURL` and `PortalURL` config options (Agent now proxies all routes per ADR-026)
 - **BREAKING**: Dynamic policy API path changed from `/api/v1/policies/dynamic` to `/api/v1/dynamic-policies`
 
+### Added
+
+- **Audit Log Reading**: Added `SearchAuditLogs()` for searching audit logs with filters (user email, client ID, time range, request type)
+- **Tenant Audit Logs**: Added `GetAuditLogsByTenant()` for retrieving audit logs scoped to a specific tenant
+- **Audit Types**: Added `AuditLogEntry`, `AuditSearchRequest`, `AuditQueryOptions`, and `AuditSearchResponse` types
+
 ### Changed
 
 - All SDK methods now route through single Agent endpoint
@@ -40,16 +46,6 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
     ClientSecret: "my-secret",
 })
 ```
-
----
-
-## [1.18.0] - 2026-01-05
-
-### Added
-
-- **Audit Log Reading**: Added `SearchAuditLogs()` for searching audit logs with filters (user email, client ID, time range, request type)
-- **Tenant Audit Logs**: Added `GetAuditLogsByTenant()` for retrieving audit logs scoped to a specific tenant
-- **Audit Types**: Added `AuditLogEntry`, `AuditSearchRequest`, `AuditQueryOptions`, and `AuditSearchResponse` types
 
 ---
 
