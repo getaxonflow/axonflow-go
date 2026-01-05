@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **ToggleDynamicPolicy HTTP Method**: Changed from PATCH to PUT to match API specification
 - **Dynamic Policy Response Parsing**: Fixed `ListDynamicPolicies`, `GetDynamicPolicy`, `CreateDynamicPolicy`, `UpdateDynamicPolicy`, `ToggleDynamicPolicy`, and `GetEffectiveDynamicPolicies` to correctly parse wrapped API responses
   - API returns `{"policies": [...]}` and `{"policy": {...}}` wrappers
   - Added `dynamicPoliciesResponse` and `dynamicPolicyResponse` wrapper structs
