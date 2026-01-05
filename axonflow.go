@@ -209,6 +209,8 @@ type PolicyApprovalResult struct {
 	ContextID string `json:"context_id"`
 	// Approved indicates whether the request was approved
 	Approved bool `json:"approved"`
+	// RequiresRedaction indicates whether response requires redaction (PII detected with redact action)
+	RequiresRedaction bool `json:"requires_redaction,omitempty"`
 	// ApprovedData contains filtered/approved data to send to LLM
 	ApprovedData map[string]interface{} `json:"approved_data"`
 	// Policies lists the policies that were evaluated
