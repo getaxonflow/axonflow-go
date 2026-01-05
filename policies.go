@@ -36,6 +36,9 @@ const (
 	CategoryCodeUnsafe     PolicyCategory = "code-unsafe"
 	CategoryCodeCompliance PolicyCategory = "code-compliance"
 
+	// Sensitive data category
+	CategorySensitiveData PolicyCategory = "sensitive-data"
+
 	// Dynamic policy categories
 	CategoryDynamicRisk       PolicyCategory = "dynamic-risk"
 	CategoryDynamicCompliance PolicyCategory = "dynamic-compliance"
@@ -202,15 +205,23 @@ type DynamicPolicyAction struct {
 // DynamicPolicy represents a dynamic policy definition
 // Dynamic policies are LLM-powered policies that can evaluate complex,
 // context-aware rules that can't be expressed with simple regex patterns.
+//
+// For provider restrictions (GDPR, HIPAA, RBI compliance), use action config:
+//
+//	Actions: []DynamicPolicyAction{{Type: "route", Config: map[string]interface{}{"allowed_providers": []string{"ollama", "azure-eu"}}}}
 type DynamicPolicy struct {
 	ID          string                   `json:"id"`
 	Name        string                   `json:"name"`
 	Description string                   `json:"description,omitempty"`
-	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
+	Type        string                   `json:"type"`               // "risk", "content", "user", "cost"
+	Category    string                   `json:"category,omitempty"` // "dynamic-risk", "dynamic-compliance", etc.
+	Tier        string                   `json:"tier,omitempty"`     // "system", "organization", "tenant"
 	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
 	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
 	Priority    int                      `json:"priority"`
 	Enabled     bool                     `json:"enabled"`
+	Version     int                      `json:"version,omitempty"`
+	TenantID    string                   `json:"tenant_id,omitempty"`
 	CreatedAt   time.Time                `json:"created_at"`
 	UpdatedAt   time.Time                `json:"updated_at"`
 }
@@ -227,10 +238,15 @@ type ListDynamicPoliciesOptions struct {
 }
 
 // CreateDynamicPolicyRequest represents a request to create a dynamic policy
+//
+// For provider restrictions (GDPR, HIPAA, RBI compliance), use action config:
+//
+//	Actions: []DynamicPolicyAction{{Type: "route", Config: map[string]interface{}{"allowed_providers": []string{"ollama"}}}}
 type CreateDynamicPolicyRequest struct {
 	Name        string                   `json:"name"`
 	Description string                   `json:"description,omitempty"`
-	Type        string                   `json:"type"` // "risk", "content", "user", "cost"
+	Type        string                   `json:"type"`               // "risk", "content", "user", "cost"
+	Category    string                   `json:"category,omitempty"` // Must start with "dynamic-"
 	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
 	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
 	Priority    int                      `json:"priority"`
@@ -238,10 +254,13 @@ type CreateDynamicPolicyRequest struct {
 }
 
 // UpdateDynamicPolicyRequest represents a request to update a dynamic policy
+//
+// For provider restrictions, use action config with "allowed_providers" key.
 type UpdateDynamicPolicyRequest struct {
 	Name        *string                  `json:"name,omitempty"`
 	Description *string                  `json:"description,omitempty"`
 	Type        *string                  `json:"type,omitempty"`
+	Category    *string                  `json:"category,omitempty"`
 	Conditions  []DynamicPolicyCondition `json:"conditions,omitempty"`
 	Actions     []DynamicPolicyAction    `json:"actions,omitempty"`
 	Priority    *int                     `json:"priority,omitempty"`
@@ -794,6 +813,16 @@ func (c *AxonFlowClient) ListPolicyOverrides() ([]PolicyOverride, error) {
 // Dynamic Policy Methods
 // ============================================================================
 
+// dynamicPoliciesResponse wraps the list dynamic policies API response
+type dynamicPoliciesResponse struct {
+	Policies []DynamicPolicy `json:"policies"`
+}
+
+// dynamicPolicyResponse wraps single dynamic policy API responses
+type dynamicPolicyResponse struct {
+	Policy DynamicPolicy `json:"policy"`
+}
+
 // ListDynamicPolicies lists all dynamic policies with optional filtering.
 // Dynamic policies are stored on the Orchestrator (not Agent).
 func (c *AxonFlowClient) ListDynamicPolicies(options *ListDynamicPoliciesOptions) ([]DynamicPolicy, error) {
@@ -806,12 +835,12 @@ func (c *AxonFlowClient) ListDynamicPolicies(options *ListDynamicPoliciesOptions
 		log.Printf("[AxonFlow] Listing dynamic policies: %s", path)
 	}
 
-	var policies []DynamicPolicy
-	if err := c.orchestratorPolicyRequest("GET", path, nil, &policies); err != nil {
+	var response dynamicPoliciesResponse
+	if err := c.orchestratorPolicyRequest("GET", path, nil, &response); err != nil {
 		return nil, err
 	}
 
-	return policies, nil
+	return response.Policies, nil
 }
 
 // GetDynamicPolicy gets a specific dynamic policy by ID.
@@ -821,12 +850,12 @@ func (c *AxonFlowClient) GetDynamicPolicy(id string) (*DynamicPolicy, error) {
 		log.Printf("[AxonFlow] Getting dynamic policy: %s", id)
 	}
 
-	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("GET", "/api/v1/dynamic-policies/"+id, nil, &policy); err != nil {
+	var response dynamicPolicyResponse
+	if err := c.orchestratorPolicyRequest("GET", "/api/v1/dynamic-policies/"+id, nil, &response); err != nil {
 		return nil, err
 	}
 
-	return &policy, nil
+	return &response.Policy, nil
 }
 
 // CreateDynamicPolicy creates a new dynamic policy.
@@ -836,12 +865,12 @@ func (c *AxonFlowClient) CreateDynamicPolicy(req *CreateDynamicPolicyRequest) (*
 		log.Printf("[AxonFlow] Creating dynamic policy: %s", req.Name)
 	}
 
-	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("POST", "/api/v1/dynamic-policies", req, &policy); err != nil {
+	var response dynamicPolicyResponse
+	if err := c.orchestratorPolicyRequest("POST", "/api/v1/dynamic-policies", req, &response); err != nil {
 		return nil, err
 	}
 
-	return &policy, nil
+	return &response.Policy, nil
 }
 
 // UpdateDynamicPolicy updates an existing dynamic policy.
@@ -851,12 +880,12 @@ func (c *AxonFlowClient) UpdateDynamicPolicy(id string, req *UpdateDynamicPolicy
 		log.Printf("[AxonFlow] Updating dynamic policy: %s", id)
 	}
 
-	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("PUT", "/api/v1/dynamic-policies/"+id, req, &policy); err != nil {
+	var response dynamicPolicyResponse
+	if err := c.orchestratorPolicyRequest("PUT", "/api/v1/dynamic-policies/"+id, req, &response); err != nil {
 		return nil, err
 	}
 
-	return &policy, nil
+	return &response.Policy, nil
 }
 
 // DeleteDynamicPolicy deletes a dynamic policy.
@@ -877,12 +906,12 @@ func (c *AxonFlowClient) ToggleDynamicPolicy(id string, enabled bool) (*DynamicP
 	}
 
 	body := map[string]bool{"enabled": enabled}
-	var policy DynamicPolicy
-	if err := c.orchestratorPolicyRequest("PATCH", "/api/v1/dynamic-policies/"+id, body, &policy); err != nil {
+	var response dynamicPolicyResponse
+	if err := c.orchestratorPolicyRequest("PUT", "/api/v1/dynamic-policies/"+id, body, &response); err != nil {
 		return nil, err
 	}
 
-	return &policy, nil
+	return &response.Policy, nil
 }
 
 // GetEffectiveDynamicPolicies gets effective dynamic policies with tier inheritance applied.
@@ -897,10 +926,11 @@ func (c *AxonFlowClient) GetEffectiveDynamicPolicies(options *EffectivePoliciesO
 		log.Printf("[AxonFlow] Getting effective dynamic policies: %s", path)
 	}
 
-	var policies []DynamicPolicy
-	if err := c.orchestratorPolicyRequest("GET", path, nil, &policies); err != nil {
+	// Agent proxy (Issue #886) returns {"policies": [...]} wrapper
+	var response dynamicPoliciesResponse
+	if err := c.orchestratorPolicyRequest("GET", path, nil, &response); err != nil {
 		return nil, err
 	}
 
-	return policies, nil
+	return response.Policies, nil
 }

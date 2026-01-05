@@ -5,6 +5,25 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-01-05
+
+### Added
+
+- **Sensitive Data Category**: Added `CategorySensitiveData` to `PolicyCategory` enum for policies that return `sensitive-data` category
+- **Provider Restrictions for Compliance**: Support for `allowed_providers` in dynamic policy action config
+  - Specify allowed providers via `DynamicPolicyAction.Config["allowed_providers"]`
+  - Enables GDPR, HIPAA, and RBI compliance by restricting LLM routing to specific providers
+  - Example: `Actions: []DynamicPolicyAction{{Type: "route", Config: map[string]interface{}{"allowed_providers": []string{"ollama", "azure-eu"}}}}`
+- **Category field**: Added `Category` field to `CreateDynamicPolicyRequest` and `UpdateDynamicPolicyRequest`
+- **DynamicPolicy fields**: Added `Category`, `Tier`, `Version`, `TenantID` fields to `DynamicPolicy` struct
+
+### Fixed
+
+- **ToggleDynamicPolicy HTTP Method**: Changed from PATCH to PUT to match API specification
+- **Dynamic Policy Response Parsing**: Fixed `ListDynamicPolicies`, `GetDynamicPolicy`, `CreateDynamicPolicy`, `UpdateDynamicPolicy`, `ToggleDynamicPolicy`, and `GetEffectiveDynamicPolicies` to correctly parse wrapped API responses
+  - API returns `{"policies": [...]}` and `{"policy": {...}}` wrappers
+  - Added `dynamicPoliciesResponse` and `dynamicPolicyResponse` wrapper structs
+
 ## [2.0.0] - 2026-01-05
 
 ### Breaking Changes
