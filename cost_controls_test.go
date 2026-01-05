@@ -26,9 +26,9 @@ func TestCreateBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	budget, err := client.CreateBudget(context.Background(), CreateBudgetRequest{
@@ -62,9 +62,9 @@ func TestGetBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	budget, err := client.GetBudget(context.Background(), "budget-123")
@@ -93,9 +93,9 @@ func TestListBudgets(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.ListBudgets(context.Background(), ListBudgetsOptions{})
@@ -125,9 +125,9 @@ func TestListBudgetsWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	opts := ListBudgetsOptions{
@@ -158,9 +158,9 @@ func TestUpdateBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	budget, err := client.UpdateBudget(context.Background(), &Budget{
@@ -186,9 +186,9 @@ func TestDeleteBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	err := client.DeleteBudget(context.Background(), "budget-123")
@@ -219,9 +219,9 @@ func TestGetBudgetStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	status, err := client.GetBudgetStatus(context.Background(), "budget-123")
@@ -257,9 +257,9 @@ func TestGetBudgetAlerts(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.GetBudgetAlerts(context.Background(), "budget-123", 10)
@@ -286,9 +286,9 @@ func TestCheckBudget(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	decision, err := client.CheckBudget(context.Background(), CheckBudgetRequest{
@@ -323,9 +323,9 @@ func TestGetUsageSummary(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	summary, err := client.GetUsageSummary(context.Background(), UsageQueryOptions{})
@@ -355,9 +355,9 @@ func TestGetUsageBreakdown(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	breakdown, err := client.GetUsageBreakdown(context.Background(), "provider", UsageQueryOptions{})
@@ -392,9 +392,9 @@ func TestListUsageRecords(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.ListUsageRecords(context.Background(), UsageQueryOptions{})
@@ -424,9 +424,9 @@ func TestGetPricing(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.GetPricing(context.Background(), "openai", "gpt-4")
@@ -538,9 +538,9 @@ func TestListBudgetsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	opts := ListBudgetsOptions{
@@ -575,9 +575,9 @@ func TestGetBudgetAlertsWithNoLimit(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.GetBudgetAlerts(context.Background(), "budget-123", 0)
@@ -608,9 +608,9 @@ func TestGetUsageSummaryWithPeriod(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	summary, err := client.GetUsageSummary(context.Background(), UsageQueryOptions{
@@ -645,9 +645,9 @@ func TestGetUsageBreakdownWithPeriod(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	breakdown, err := client.GetUsageBreakdown(context.Background(), "model", UsageQueryOptions{
@@ -689,9 +689,9 @@ func TestListUsageRecordsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.ListUsageRecords(context.Background(), UsageQueryOptions{
@@ -730,9 +730,9 @@ func TestGetPricingWithNoParams(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.GetPricing(context.Background(), "", "")

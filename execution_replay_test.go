@@ -38,9 +38,9 @@ func TestListExecutions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.ListExecutions(nil)
@@ -71,9 +71,9 @@ func TestListExecutionsWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	opts := &ListExecutionsOptions{
@@ -110,9 +110,9 @@ func TestGetExecution(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	exec, err := client.GetExecution("exec-123")
@@ -148,9 +148,9 @@ func TestGetExecutionSteps(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	steps, err := client.GetExecutionSteps("exec-123")
@@ -186,9 +186,9 @@ func TestGetExecutionTimeline(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	timeline, err := client.GetExecutionTimeline("exec-123")
@@ -215,9 +215,9 @@ func TestExportExecution(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	resp, err := client.ExportExecution("exec-123", nil)
@@ -247,9 +247,9 @@ func TestExportExecutionWithOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	opts := &ExecutionExportOptions{
@@ -275,9 +275,9 @@ func TestDeleteExecution(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	err := client.DeleteExecution("exec-123")
@@ -349,9 +349,9 @@ func TestListExecutionsWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	opts := &ListExecutionsOptions{
@@ -380,9 +380,9 @@ func TestListExecutionsError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.ListExecutions(nil)
@@ -399,9 +399,9 @@ func TestGetExecutionNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.GetExecution("exec-nonexistent")
@@ -418,9 +418,9 @@ func TestGetExecutionError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.GetExecution("exec-123")
@@ -437,9 +437,9 @@ func TestGetExecutionStepsNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.GetExecutionSteps("exec-nonexistent")
@@ -456,9 +456,9 @@ func TestGetExecutionStepsError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.GetExecutionSteps("exec-123")
@@ -475,9 +475,9 @@ func TestGetExecutionTimelineNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.GetExecutionTimeline("exec-nonexistent")
@@ -494,9 +494,9 @@ func TestGetExecutionTimelineError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.GetExecutionTimeline("exec-123")
@@ -513,9 +513,9 @@ func TestExportExecutionNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.ExportExecution("exec-nonexistent", nil)
@@ -532,9 +532,9 @@ func TestExportExecutionError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	_, err := client.ExportExecution("exec-123", nil)
@@ -569,9 +569,9 @@ func TestExportExecutionWithAllOptions(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	opts := &ExecutionExportOptions{
@@ -598,9 +598,9 @@ func TestDeleteExecutionNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	err := client.DeleteExecution("exec-nonexistent")
@@ -617,9 +617,9 @@ func TestDeleteExecutionError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	err := client.DeleteExecution("exec-123")
@@ -638,9 +638,9 @@ func TestDeleteExecutionOKStatus(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	err := client.DeleteExecution("exec-123")
@@ -662,10 +662,10 @@ func TestListExecutionsWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
-		Debug:           true, // Enable debug mode
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Debug:        true, // Enable debug mode
 	})
 
 	resp, err := client.ListExecutions(nil)
@@ -694,10 +694,10 @@ func TestGetExecutionWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
-		Debug:           true,
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	exec, err := client.GetExecution("exec-123")
@@ -722,10 +722,10 @@ func TestGetExecutionStepsWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
-		Debug:           true,
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	steps, err := client.GetExecutionSteps("exec-123")
@@ -750,10 +750,10 @@ func TestGetExecutionTimelineWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
-		Debug:           true,
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	timeline, err := client.GetExecutionTimeline("exec-123")
@@ -778,10 +778,10 @@ func TestExportExecutionWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
-		Debug:           true,
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	resp, err := client.ExportExecution("exec-123", nil)
@@ -803,10 +803,10 @@ func TestDeleteExecutionWithDebugMode(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
-		Debug:           true,
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Debug:        true,
 	})
 
 	err := client.DeleteExecution("exec-123")

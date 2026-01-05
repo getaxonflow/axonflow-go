@@ -286,9 +286,9 @@ func TestListConnectors(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	connectors, err := client.ListConnectors()
@@ -315,8 +315,8 @@ func TestListConnectorsError(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
+		Endpoint: server.URL,
+		ClientID: "test",
 	})
 
 	_, err := client.ListConnectors()
@@ -347,9 +347,9 @@ func TestInstallConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	err := client.InstallConnector(ConnectorInstallRequest{
@@ -405,9 +405,9 @@ func TestGetConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	connector, err := client.GetConnector("redis")
@@ -431,8 +431,8 @@ func TestGetConnectorNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
+		Endpoint: server.URL,
+		ClientID: "test",
 	})
 
 	_, err := client.GetConnector("nonexistent")
@@ -456,9 +456,9 @@ func TestGetConnectorHealth(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Debug:           true,
+		Endpoint: server.URL,
+		ClientID: "test",
+		Debug:    true,
 	})
 
 	status, err := client.GetConnectorHealth("redis")
@@ -482,8 +482,8 @@ func TestGetConnectorHealthNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
+		Endpoint: server.URL,
+		ClientID: "test",
 	})
 
 	_, err := client.GetConnectorHealth("nonexistent")
@@ -1187,9 +1187,9 @@ func TestOrchestratorHealthCheck(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.OrchestratorHealthCheck()
@@ -1205,9 +1205,9 @@ func TestOrchestratorHealthCheckUnhealthy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.OrchestratorHealthCheck()
@@ -1225,9 +1225,9 @@ func TestUninstallConnector(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.UninstallConnector("postgres")
@@ -1244,9 +1244,9 @@ func TestUninstallConnectorNotFound(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test",
-		Cache:           CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
 	})
 
 	err := client.UninstallConnector("nonexistent")

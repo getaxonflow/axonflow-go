@@ -439,9 +439,9 @@ func TestListDynamicPolicies(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	policies, err := client.ListDynamicPolicies(nil)
@@ -466,9 +466,9 @@ func TestGetDynamicPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	policy, err := client.GetDynamicPolicy("dpol_456")
@@ -493,9 +493,9 @@ func TestCreateDynamicPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	req := &CreateDynamicPolicyRequest{
@@ -532,9 +532,9 @@ func TestDeleteDynamicPolicy(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	err := client.DeleteDynamicPolicy("dpol_456")
@@ -555,9 +555,9 @@ func TestGetEffectiveDynamicPolicies(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-		Endpoint:        server.URL,
-		ClientID:        "test-client",
-		ClientSecret:    "test-secret",
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
 	})
 
 	policies, err := client.GetEffectiveDynamicPolicies(nil)

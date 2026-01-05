@@ -335,9 +335,9 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			Endpoint: server.URL,
-			LicenseKey:      "my-license",
-			ClientSecret:    "my-secret",
+			Endpoint:     server.URL,
+			LicenseKey:   "my-license",
+			ClientSecret: "my-secret",
 		})
 
 		_, err := client.SearchAuditLogs(context.Background(), nil)
@@ -590,8 +590,8 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			Endpoint: server.URL,
-			LicenseKey:      "my-license",
+			Endpoint:   server.URL,
+			LicenseKey: "my-license",
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -609,7 +609,7 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 
 		client := NewClient(AxonFlowConfig{
 			Endpoint: server.URL,
-			Debug:           true,
+			Debug:    true,
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)
@@ -713,7 +713,7 @@ func TestContextCancellation(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(AxonFlowConfig{
-			Endpoint: server.URL,
+		Endpoint: server.URL,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
