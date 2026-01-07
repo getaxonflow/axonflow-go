@@ -476,6 +476,50 @@ func TestSyncPRStatus(t *testing.T) {
 	}
 }
 
+func TestClosePR(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {
+			w.Header().Set("Set-Cookie", "axonflow_session=abc123; Path=/; HttpOnly")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PortalLoginResponse{SessionID: "sess-123", OrgID: "test-org"})
+		}
+		if r.URL.Path == "/api/v1/code-governance/prs/pr-123" && r.Method == "DELETE" {
+			// Verify delete_branch query param
+			deleteBranch := r.URL.Query().Get("delete_branch")
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(PRRecord{
+				ID:       "pr-123",
+				PRNumber: 123,
+				State:    "closed",
+			})
+			if deleteBranch != "true" {
+				t.Errorf("Expected delete_branch=true, got '%s'", deleteBranch)
+			}
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+	})
+
+	_, err := client.LoginToPortal("test-org", "password")
+	if err != nil {
+		t.Fatalf("LoginToPortal failed: %v", err)
+	}
+
+	pr, err := client.ClosePR("pr-123", true)
+	if err != nil {
+		t.Fatalf("ClosePR failed: %v", err)
+	}
+
+	if pr.State != "closed" {
+		t.Errorf("Expected state 'closed', got '%s'", pr.State)
+	}
+}
+
 func TestGetCodeGovernanceMetrics(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/api/v1/auth/login" && r.Method == "POST" {

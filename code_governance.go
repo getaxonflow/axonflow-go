@@ -187,6 +187,8 @@ type PRRecord struct {
 	UnsafePatterns int `json:"unsafe_patterns"`
 	// CreatedAt is the creation timestamp
 	CreatedAt time.Time `json:"created_at"`
+	// ClosedAt is the closed timestamp (if closed)
+	ClosedAt *time.Time `json:"closed_at,omitempty"`
 	// CreatedBy is the user who created the PR
 	CreatedBy string `json:"created_by,omitempty"`
 	// ProviderType is the Git provider type
@@ -448,6 +450,27 @@ func (c *AxonFlowClient) SyncPRStatus(prID string) (*PRRecord, error) {
 
 	var resp PRRecord
 	if err := c.portalRequest("POST", "/api/v1/code-governance/prs/"+prID+"/sync", nil, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+// ClosePR closes a PR without merging and optionally deletes the branch.
+// This is an enterprise feature for cleaning up test/demo PRs.
+// Supports all Git providers: GitHub, GitLab, Bitbucket.
+func (c *AxonFlowClient) ClosePR(prID string, deleteBranch bool) (*PRRecord, error) {
+	if c.config.Debug {
+		log.Printf("[AxonFlow] Closing PR: %s (deleteBranch=%v)", prID, deleteBranch)
+	}
+
+	path := "/api/v1/code-governance/prs/" + prID
+	if deleteBranch {
+		path += "?delete_branch=true"
+	}
+
+	var resp PRRecord
+	if err := c.portalRequest("DELETE", path, nil, &resp); err != nil {
 		return nil, err
 	}
 
