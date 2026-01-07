@@ -1097,7 +1097,7 @@ func (c *AxonFlowClient) ExecutePlan(planID string, userToken ...string) (*PlanE
 
 // GetPlanStatus retrieves the status of a running or completed plan
 func (c *AxonFlowClient) GetPlanStatus(planID string) (*PlanExecutionResponse, error) {
-	resp, err := c.httpClient.Get(c.config.Endpoint + "/api/plans/" + planID)
+	resp, err := c.httpClient.Get(c.config.Endpoint + "/api/v1/plan/" + planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plan status: %w", err)
 	}

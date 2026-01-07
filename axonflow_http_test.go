@@ -979,7 +979,7 @@ func TestExecutePlanFailed(t *testing.T) {
 
 func TestGetPlanStatus(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/plans/plan-123" {
+		if r.URL.Path == "/api/v1/plan/plan-123" {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"plan_id":         "plan-123",

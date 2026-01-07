@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Requires enterprise portal authentication
 - **PRRecord.ClosedAt**: Added optional `ClosedAt` field to track when a PR was closed
 
+### Fixed
+
+- **GetPlanStatus endpoint**: Fixed endpoint path from `/api/plans/{id}` to `/api/v1/plan/{id}` to match orchestrator API
+
 ## [2.1.0] - 2026-01-05
 
 ### Added

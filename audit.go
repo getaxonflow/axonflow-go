@@ -5,6 +5,7 @@ package axonflow
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -332,12 +333,22 @@ func (c *AxonFlowClient) GetAuditLogsByTenant(ctx context.Context, tenantID stri
 	return result, nil
 }
 
-// addAuthHeaders adds authentication headers to the request
+// addAuthHeaders adds authentication headers to the request.
+// Priority:
+//  1. OAuth2-style Basic auth (ClientID + ClientSecret) - industry standard
+//  2. X-License-Key header (backward compatibility)
 func (c *AxonFlowClient) addAuthHeaders(req *http.Request) {
+	// OAuth2-style: Authorization: Basic base64(clientId:clientSecret)
+	if c.config.ClientID != "" && c.config.ClientSecret != "" {
+		credentials := base64.StdEncoding.EncodeToString(
+			[]byte(c.config.ClientID + ":" + c.config.ClientSecret),
+		)
+		req.Header.Set("Authorization", "Basic "+credentials)
+		return
+	}
+
+	// Fallback: X-License-Key header (backward compatibility)
 	if c.config.LicenseKey != "" {
 		req.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
 	}
 }
