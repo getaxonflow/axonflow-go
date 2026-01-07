@@ -515,15 +515,7 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Sending request - Type: %s, Query: %s", req.RequestType, req.Query[:min(50, len(req.Query))])
@@ -791,15 +783,7 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -827,14 +811,7 @@ func (c *AxonFlowClient) UninstallConnector(connectorName string) error {
 		return fmt.Errorf("failed to create uninstall request: %w", err)
 	}
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -946,14 +923,7 @@ func (c *AxonFlowClient) executeMapRequest(req ClientRequest) (*ClientResponse, 
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] MAP request - Query: %s (timeout: %v)", req.Query[:min(50, len(req.Query))], c.config.MapTimeout)
@@ -1200,14 +1170,7 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Gateway Mode: Pre-check for query: %s", query[:min(50, len(query))])
@@ -1353,14 +1316,7 @@ func (c *AxonFlowClient) AuditLLMCall(
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Gateway Mode: Audit - ContextID: %s, Provider: %s, Model: %s",
@@ -1568,15 +1524,7 @@ func (c *AxonFlowClient) makeJSONRequest(ctx context.Context, method, fullURL st
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		req.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(req)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] JSON request: %s %s", method, fullURL)

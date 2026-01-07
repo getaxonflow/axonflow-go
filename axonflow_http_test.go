@@ -1,6 +1,7 @@
 package axonflow
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -1133,13 +1134,13 @@ func TestRetryWith4xxError(t *testing.T) {
 func TestAuthHeadersSentWithCredentials(t *testing.T) {
 	receivedAuthHeader := ""
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("X-Client-Secret")
+		receivedAuthHeader = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{"success": true})
 	}))
 	defer server.Close()
 
-	// When credentials are provided, auth headers should be sent
+	// When credentials are provided, OAuth2 Basic auth header should be sent
 	client := NewClient(AxonFlowConfig{
 		Endpoint:     server.URL,
 		ClientID:     "test",
@@ -1149,9 +1150,10 @@ func TestAuthHeadersSentWithCredentials(t *testing.T) {
 
 	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
 
-	// Auth header SHOULD be set when credentials are provided
-	if receivedAuthHeader != "secret" {
-		t.Errorf("Expected auth header 'secret', got '%s'", receivedAuthHeader)
+	// Auth header SHOULD be set with OAuth2 Basic auth format
+	expectedBasic := "Basic " + base64.StdEncoding.EncodeToString([]byte("test:secret"))
+	if receivedAuthHeader != expectedBasic {
+		t.Errorf("Expected OAuth2 Basic auth header '%s', got '%s'", expectedBasic, receivedAuthHeader)
 	}
 }
 
