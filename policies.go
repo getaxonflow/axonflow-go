@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -343,15 +342,8 @@ func (c *AxonFlowClient) orchestratorPolicyRequest(method, path string, body int
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.Endpoint, "localhost") ||
-		strings.Contains(c.config.Endpoint, "127.0.0.1")
-	if !isLocalhost {
-		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			req.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
-	}
+	// Add OAuth2 Basic auth headers
+	c.addAuthHeaders(req)
 
 	// Always set tenant ID for policy APIs (uses ClientID as tenant)
 	if c.config.ClientID != "" {
@@ -414,15 +406,8 @@ func (c *AxonFlowClient) policyRequest(method, path string, body interface{}, re
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.Endpoint, "localhost") ||
-		strings.Contains(c.config.Endpoint, "127.0.0.1")
-	if !isLocalhost {
-		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			req.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
-	}
+	// Add OAuth2 Basic auth headers
+	c.addAuthHeaders(req)
 
 	// Always set tenant ID for policy APIs (uses ClientID as tenant)
 	if c.config.ClientID != "" {
@@ -474,15 +459,8 @@ func (c *AxonFlowClient) policyRequestRaw(method, path string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Skip auth headers for localhost (self-hosted mode)
-	isLocalhost := strings.Contains(c.config.Endpoint, "localhost") ||
-		strings.Contains(c.config.Endpoint, "127.0.0.1")
-	if !isLocalhost {
-		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
-		if c.config.LicenseKey != "" {
-			req.Header.Set("X-License-Key", c.config.LicenseKey)
-		}
-	}
+	// Add OAuth2 Basic auth headers
+	c.addAuthHeaders(req)
 
 	// Always set tenant ID for policy APIs (uses ClientID as tenant)
 	if c.config.ClientID != "" {

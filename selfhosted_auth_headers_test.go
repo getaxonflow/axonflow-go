@@ -105,93 +105,13 @@ func TestAuthHeaders_OAuth2Basic(t *testing.T) {
 	t.Log("✅ OAuth2 Basic auth header correctly sent")
 }
 
-// TestAuthHeaders_OnlyLicenseKey verifies X-License-Key header
-// is sent when only LicenseKey is configured (backward compatibility)
-func TestAuthHeaders_OnlyLicenseKey(t *testing.T) {
-	receivedAuthHeader := ""
-	receivedLicenseHeader := ""
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("Authorization")
-		receivedLicenseHeader = r.Header.Get("X-License-Key")
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": true,
-			"data":    map[string]string{"answer": "test"},
-		})
-	}))
-	defer server.Close()
-
-	// Create client with ONLY LicenseKey
-	client := NewClient(AxonFlowConfig{
-		Endpoint:   server.URL,
-		LicenseKey: "AXON-V2-license-key",
-		Cache:      CacheConfig{Enabled: false},
-	})
-
-	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
-
-	// Should NOT send Authorization header
-	if receivedAuthHeader != "" {
-		t.Errorf("Expected no Authorization with only LicenseKey, got '%s'", receivedAuthHeader)
-	}
-	// Should send X-License-Key header
-	if receivedLicenseHeader != "AXON-V2-license-key" {
-		t.Errorf("Expected X-License-Key 'AXON-V2-license-key', got '%s'", receivedLicenseHeader)
-	}
-
-	t.Log("✅ X-License-Key header correctly sent (backward compatibility)")
-}
-
-// TestAuthHeaders_OAuth2TakesPriority verifies OAuth2 takes priority over LicenseKey
-func TestAuthHeaders_OAuth2TakesPriority(t *testing.T) {
-	receivedAuthHeader := ""
-	receivedLicenseHeader := ""
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("Authorization")
-		receivedLicenseHeader = r.Header.Get("X-License-Key")
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": true,
-			"data":    map[string]string{"answer": "test"},
-		})
-	}))
-	defer server.Close()
-
-	// Create client with BOTH OAuth2 credentials AND LicenseKey
-	client := NewClient(AxonFlowConfig{
-		Endpoint:     server.URL,
-		ClientID:     "my-client",
-		ClientSecret: "my-secret",
-		LicenseKey:   "should-be-ignored",
-		Cache:        CacheConfig{Enabled: false},
-	})
-
-	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
-
-	// OAuth2 should take priority
-	expectedBasic := "Basic " + base64.StdEncoding.EncodeToString([]byte("my-client:my-secret"))
-	if receivedAuthHeader != expectedBasic {
-		t.Errorf("Expected OAuth2 Authorization header, got '%s'", receivedAuthHeader)
-	}
-	// X-License-Key should NOT be sent when OAuth2 is configured
-	if receivedLicenseHeader != "" {
-		t.Errorf("Expected no X-License-Key when OAuth2 is configured, got '%s'", receivedLicenseHeader)
-	}
-
-	t.Log("✅ OAuth2 correctly takes priority over LicenseKey")
-}
-
 // TestAuthHeaders_ClientIDWithoutSecret verifies that ClientID alone
 // doesn't trigger OAuth2 (needs both ClientID + ClientSecret)
 func TestAuthHeaders_ClientIDWithoutSecret(t *testing.T) {
 	receivedAuthHeader := ""
-	receivedLicenseHeader := ""
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedAuthHeader = r.Header.Get("Authorization")
-		receivedLicenseHeader = r.Header.Get("X-License-Key")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
@@ -202,21 +122,18 @@ func TestAuthHeaders_ClientIDWithoutSecret(t *testing.T) {
 
 	// Create client with only ClientID (no ClientSecret)
 	client := NewClient(AxonFlowConfig{
-		Endpoint:   server.URL,
-		ClientID:   "my-client",
-		LicenseKey: "my-license",
-		Cache:      CacheConfig{Enabled: false},
+		Endpoint: server.URL,
+		ClientID: "my-client",
+		// No ClientSecret
+		Cache: CacheConfig{Enabled: false},
 	})
 
 	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
 
-	// Should fall back to X-License-Key since ClientSecret is missing
+	// Should NOT send Authorization header since ClientSecret is missing
 	if receivedAuthHeader != "" {
 		t.Errorf("Expected no Authorization without ClientSecret, got '%s'", receivedAuthHeader)
 	}
-	if receivedLicenseHeader != "my-license" {
-		t.Errorf("Expected X-License-Key fallback, got '%s'", receivedLicenseHeader)
-	}
 
-	t.Log("✅ Correctly falls back to X-License-Key when ClientSecret is missing")
+	t.Log("✅ Correctly omits Authorization when ClientSecret is missing")
 }

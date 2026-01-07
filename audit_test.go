@@ -2,6 +2,7 @@ package axonflow
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -89,9 +90,9 @@ func TestSearchAuditLogs(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			Endpoint:   server.URL,
-			ClientID:   "test-client",
-			LicenseKey: "test-key",
+			Endpoint:     server.URL,
+			ClientID:     "test-client",
+			ClientSecret: "test-secret",
 		})
 
 		req := &AuditSearchRequest{
@@ -322,11 +323,11 @@ func TestSearchAuditLogs(t *testing.T) {
 
 	t.Run("includes auth headers", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("X-License-Key") != "my-license" {
-				t.Errorf("expected X-License-Key header")
-			}
-			if r.Header.Get("X-Client-Secret") != "my-secret" {
-				t.Errorf("expected X-Client-Secret header")
+			// Check for OAuth2 Basic auth header
+			authHeader := r.Header.Get("Authorization")
+			expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("test-client:my-secret"))
+			if authHeader != expectedAuth {
+				t.Errorf("expected Authorization header '%s', got '%s'", expectedAuth, authHeader)
 			}
 
 			w.Header().Set("Content-Type", "application/json")
@@ -336,7 +337,7 @@ func TestSearchAuditLogs(t *testing.T) {
 
 		client := NewClient(AxonFlowConfig{
 			Endpoint:     server.URL,
-			LicenseKey:   "my-license",
+			ClientID:     "test-client",
 			ClientSecret: "my-secret",
 		})
 
@@ -580,8 +581,11 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 
 	t.Run("includes auth headers", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("X-License-Key") != "my-license" {
-				t.Errorf("expected X-License-Key header")
+			// Check for OAuth2 Basic auth header
+			authHeader := r.Header.Get("Authorization")
+			expectedAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte("test-client:test-secret"))
+			if authHeader != expectedAuth {
+				t.Errorf("expected Authorization header '%s', got '%s'", expectedAuth, authHeader)
 			}
 
 			w.Header().Set("Content-Type", "application/json")
@@ -590,8 +594,9 @@ func TestGetAuditLogsByTenant(t *testing.T) {
 		defer server.Close()
 
 		client := NewClient(AxonFlowConfig{
-			Endpoint:   server.URL,
-			LicenseKey: "my-license",
+			Endpoint:     server.URL,
+			ClientID:     "test-client",
+			ClientSecret: "test-secret",
 		})
 
 		_, err := client.GetAuditLogsByTenant(context.Background(), "tenant-abc", nil)

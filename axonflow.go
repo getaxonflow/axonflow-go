@@ -22,9 +22,8 @@ import (
 // AxonFlowConfig represents configuration for the AxonFlow client
 type AxonFlowConfig struct {
 	Endpoint     string        // Required: AxonFlow endpoint URL (Agent proxies all routes since ADR-026)
-	ClientID     string        // Optional: Client ID (required for enterprise features)
-	ClientSecret string        // Optional: Client secret (required for enterprise features)
-	LicenseKey   string        // Optional: License key (alternative to ClientID/ClientSecret)
+	ClientID     string        // Required for enterprise features: OAuth2 client ID
+	ClientSecret string        // Required for enterprise features: OAuth2 client secret
 	Mode         string        // "production" | "sandbox" (default: "production")
 	Debug        bool          // Enable debug logging (default: false)
 	Timeout      time.Duration // Request timeout (default: 60s)
@@ -1126,8 +1125,8 @@ func (c *AxonFlowClient) PreCheck(
 // requireCredentials checks if credentials are configured and returns an error if not.
 // Enterprise features like Gateway Mode require authentication.
 func (c *AxonFlowClient) requireCredentials(feature string) error {
-	if c.config.LicenseKey == "" && c.config.ClientSecret == "" {
-		return fmt.Errorf("%s requires credentials. Set LicenseKey or ClientID/ClientSecret", feature)
+	if c.config.ClientID == "" || c.config.ClientSecret == "" {
+		return fmt.Errorf("%s requires credentials. Set ClientID and ClientSecret", feature)
 	}
 	return nil
 }

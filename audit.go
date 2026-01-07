@@ -333,22 +333,13 @@ func (c *AxonFlowClient) GetAuditLogsByTenant(ctx context.Context, tenantID stri
 	return result, nil
 }
 
-// addAuthHeaders adds authentication headers to the request.
-// Priority:
-//  1. OAuth2-style Basic auth (ClientID + ClientSecret) - industry standard
-//  2. X-License-Key header (backward compatibility)
+// addAuthHeaders adds OAuth2-style authentication headers to the request.
+// Uses Authorization: Basic base64(clientId:clientSecret)
 func (c *AxonFlowClient) addAuthHeaders(req *http.Request) {
-	// OAuth2-style: Authorization: Basic base64(clientId:clientSecret)
 	if c.config.ClientID != "" && c.config.ClientSecret != "" {
 		credentials := base64.StdEncoding.EncodeToString(
 			[]byte(c.config.ClientID + ":" + c.config.ClientSecret),
 		)
 		req.Header.Set("Authorization", "Basic "+credentials)
-		return
-	}
-
-	// Fallback: X-License-Key header (backward compatibility)
-	if c.config.LicenseKey != "" {
-		req.Header.Set("X-License-Key", c.config.LicenseKey)
 	}
 }
