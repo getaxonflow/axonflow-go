@@ -1123,10 +1123,11 @@ func (c *AxonFlowClient) PreCheck(
 //	client.AuditLLMCall(ctx.ContextID, "summary", "openai", "gpt-4", tokenUsage, latencyMs, nil)
 
 // requireCredentials checks if credentials are configured and returns an error if not.
-// Enterprise features like Gateway Mode require authentication.
+// Only ClientID is required; ClientSecret is optional for community mode.
+// Enterprise mode (with actual license validation) requires both.
 func (c *AxonFlowClient) requireCredentials(feature string) error {
-	if c.config.ClientID == "" || c.config.ClientSecret == "" {
-		return fmt.Errorf("%s requires credentials. Set ClientID and ClientSecret", feature)
+	if c.config.ClientID == "" {
+		return fmt.Errorf("%s requires ClientID. Set ClientID (ClientSecret is optional for community mode)", feature)
 	}
 	return nil
 }
