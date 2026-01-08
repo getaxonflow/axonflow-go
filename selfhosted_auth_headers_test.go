@@ -13,6 +13,7 @@
 package axonflow
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -30,7 +31,7 @@ func TestAuthHeaders_NotSentWithoutCredentials(t *testing.T) {
 	receivedLicenseHeader := ""
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("X-Client-Secret")
+		receivedAuthHeader = r.Header.Get("Authorization")
 		receivedLicenseHeader = r.Header.Get("X-License-Key")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -51,7 +52,7 @@ func TestAuthHeaders_NotSentWithoutCredentials(t *testing.T) {
 
 	// Auth headers should NOT be set when no credentials are provided
 	if receivedAuthHeader != "" {
-		t.Errorf("Expected no X-Client-Secret header without credentials, got '%s'", receivedAuthHeader)
+		t.Errorf("Expected no Authorization header without credentials, got '%s'", receivedAuthHeader)
 	}
 	if receivedLicenseHeader != "" {
 		t.Errorf("Expected no X-License-Key header without credentials, got '%s'", receivedLicenseHeader)
@@ -64,14 +65,14 @@ func TestAuthHeaders_NotSentWithoutCredentials(t *testing.T) {
 // AUTH HEADERS TESTS - Enterprise Mode (with credentials)
 // ============================================================
 
-// TestAuthHeaders_SentWithCredentials verifies auth headers
-// ARE sent when credentials are configured (enterprise mode)
-func TestAuthHeaders_SentWithCredentials(t *testing.T) {
+// TestAuthHeaders_OAuth2Basic verifies OAuth2 Basic auth header
+// is sent when ClientID + ClientSecret are configured
+func TestAuthHeaders_OAuth2Basic(t *testing.T) {
 	receivedAuthHeader := ""
 	receivedLicenseHeader := ""
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("X-Client-Secret")
+		receivedAuthHeader = r.Header.Get("Authorization")
 		receivedLicenseHeader = r.Header.Get("X-License-Key")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -81,97 +82,58 @@ func TestAuthHeaders_SentWithCredentials(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Create client WITH credentials
+	// Create client WITH OAuth2 credentials
 	client := NewClient(AxonFlowConfig{
 		Endpoint:     server.URL,
-		ClientID:     "test",
-		ClientSecret: "secret",
-		LicenseKey:   "license-key",
+		ClientID:     "my-client",
+		ClientSecret: "my-secret",
 		Cache:        CacheConfig{Enabled: false},
 	})
 
 	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
 
-	// Auth headers SHOULD be set when credentials are provided
-	if receivedAuthHeader != "secret" {
-		t.Errorf("Expected X-Client-Secret 'secret', got '%s'", receivedAuthHeader)
+	// Should send Authorization: Basic header (OAuth2-style)
+	expectedBasic := "Basic " + base64.StdEncoding.EncodeToString([]byte("my-client:my-secret"))
+	if receivedAuthHeader != expectedBasic {
+		t.Errorf("Expected Authorization '%s', got '%s'", expectedBasic, receivedAuthHeader)
 	}
-	if receivedLicenseHeader != "license-key" {
-		t.Errorf("Expected X-License-Key 'license-key', got '%s'", receivedLicenseHeader)
-	}
-
-	t.Log("✅ Auth headers correctly sent in enterprise mode (with credentials)")
-}
-
-// TestAuthHeaders_OnlyLicenseKey verifies auth headers work with just LicenseKey
-func TestAuthHeaders_OnlyLicenseKey(t *testing.T) {
-	receivedAuthHeader := ""
-	receivedLicenseHeader := ""
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("X-Client-Secret")
-		receivedLicenseHeader = r.Header.Get("X-License-Key")
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": true,
-			"data":    map[string]string{"answer": "test"},
-		})
-	}))
-	defer server.Close()
-
-	// Create client with ONLY LicenseKey
-	client := NewClient(AxonFlowConfig{
-		Endpoint:   server.URL,
-		LicenseKey: "license-key",
-		Cache:      CacheConfig{Enabled: false},
-	})
-
-	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
-
-	// Only LicenseKey should be sent, not ClientSecret
-	if receivedAuthHeader != "" {
-		t.Errorf("Expected no X-Client-Secret with only LicenseKey, got '%s'", receivedAuthHeader)
-	}
-	if receivedLicenseHeader != "license-key" {
-		t.Errorf("Expected X-License-Key 'license-key', got '%s'", receivedLicenseHeader)
-	}
-
-	t.Log("✅ LicenseKey header correctly sent when only LicenseKey is configured")
-}
-
-// TestAuthHeaders_OnlyClientSecret verifies auth headers work with just ClientSecret
-func TestAuthHeaders_OnlyClientSecret(t *testing.T) {
-	receivedAuthHeader := ""
-	receivedLicenseHeader := ""
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("X-Client-Secret")
-		receivedLicenseHeader = r.Header.Get("X-License-Key")
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success": true,
-			"data":    map[string]string{"answer": "test"},
-		})
-	}))
-	defer server.Close()
-
-	// Create client with ONLY ClientSecret
-	client := NewClient(AxonFlowConfig{
-		Endpoint:     server.URL,
-		ClientID:     "test",
-		ClientSecret: "secret",
-		Cache:        CacheConfig{Enabled: false},
-	})
-
-	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
-
-	// Only ClientSecret should be sent, not LicenseKey
-	if receivedAuthHeader != "secret" {
-		t.Errorf("Expected X-Client-Secret 'secret', got '%s'", receivedAuthHeader)
-	}
+	// Should NOT send X-License-Key when using OAuth2
 	if receivedLicenseHeader != "" {
-		t.Errorf("Expected no X-License-Key with only ClientSecret, got '%s'", receivedLicenseHeader)
+		t.Errorf("Expected no X-License-Key when using OAuth2, got '%s'", receivedLicenseHeader)
 	}
 
-	t.Log("✅ ClientSecret header correctly sent when only ClientSecret is configured")
+	t.Log("✅ OAuth2 Basic auth header correctly sent")
+}
+
+// TestAuthHeaders_ClientIDWithoutSecret verifies that ClientID alone
+// doesn't trigger OAuth2 (needs both ClientID + ClientSecret)
+func TestAuthHeaders_ClientIDWithoutSecret(t *testing.T) {
+	receivedAuthHeader := ""
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedAuthHeader = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+			"data":    map[string]string{"answer": "test"},
+		})
+	}))
+	defer server.Close()
+
+	// Create client with only ClientID (no ClientSecret)
+	client := NewClient(AxonFlowConfig{
+		Endpoint: server.URL,
+		ClientID: "my-client",
+		// No ClientSecret
+		Cache: CacheConfig{Enabled: false},
+	})
+
+	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
+
+	// Should NOT send Authorization header since ClientSecret is missing
+	if receivedAuthHeader != "" {
+		t.Errorf("Expected no Authorization without ClientSecret, got '%s'", receivedAuthHeader)
+	}
+
+	t.Log("✅ Correctly omits Authorization when ClientSecret is missing")
 }

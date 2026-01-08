@@ -22,9 +22,8 @@ import (
 // AxonFlowConfig represents configuration for the AxonFlow client
 type AxonFlowConfig struct {
 	Endpoint     string        // Required: AxonFlow endpoint URL (Agent proxies all routes since ADR-026)
-	ClientID     string        // Optional: Client ID (required for enterprise features)
-	ClientSecret string        // Optional: Client secret (required for enterprise features)
-	LicenseKey   string        // Optional: License key (alternative to ClientID/ClientSecret)
+	ClientID     string        // Required for enterprise features: OAuth2 client ID
+	ClientSecret string        // Required for enterprise features: OAuth2 client secret
 	Mode         string        // "production" | "sandbox" (default: "production")
 	Debug        bool          // Enable debug logging (default: false)
 	Timeout      time.Duration // Request timeout (default: 60s)
@@ -401,8 +400,14 @@ func Sandbox(apiKey string) *AxonFlowClient {
 	})
 }
 
-// ExecuteQuery sends a query through AxonFlow platform with policy enforcement
+// ExecuteQuery sends a query through AxonFlow platform with policy enforcement.
+// If userToken is empty, it defaults to "anonymous" for audit purposes.
 func (c *AxonFlowClient) ExecuteQuery(userToken, query, requestType string, context map[string]interface{}) (*ClientResponse, error) {
+	// Default to "anonymous" if userToken is empty (community mode)
+	if userToken == "" {
+		userToken = "anonymous"
+	}
+
 	// Generate cache key
 	cacheKey := fmt.Sprintf("%s:%s:%s", requestType, query, userToken)
 
@@ -515,15 +520,7 @@ func (c *AxonFlowClient) executeRequest(req ClientRequest) (*ClientResponse, err
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Sending request - Type: %s, Query: %s", req.RequestType, req.Query[:min(50, len(req.Query))])
@@ -791,15 +788,7 @@ func (c *AxonFlowClient) InstallConnector(req ConnectorInstallRequest) error {
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -827,14 +816,7 @@ func (c *AxonFlowClient) UninstallConnector(connectorName string) error {
 		return fmt.Errorf("failed to create uninstall request: %w", err)
 	}
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
@@ -946,14 +928,7 @@ func (c *AxonFlowClient) executeMapRequest(req ClientRequest) (*ClientResponse, 
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] MAP request - Query: %s (timeout: %v)", req.Query[:min(50, len(req.Query))], c.config.MapTimeout)
@@ -1097,7 +1072,7 @@ func (c *AxonFlowClient) ExecutePlan(planID string, userToken ...string) (*PlanE
 
 // GetPlanStatus retrieves the status of a running or completed plan
 func (c *AxonFlowClient) GetPlanStatus(planID string) (*PlanExecutionResponse, error) {
-	resp, err := c.httpClient.Get(c.config.Endpoint + "/api/plans/" + planID)
+	resp, err := c.httpClient.Get(c.config.Endpoint + "/api/v1/plan/" + planID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get plan status: %w", err)
 	}
@@ -1154,10 +1129,11 @@ func (c *AxonFlowClient) PreCheck(
 //	client.AuditLLMCall(ctx.ContextID, "summary", "openai", "gpt-4", tokenUsage, latencyMs, nil)
 
 // requireCredentials checks if credentials are configured and returns an error if not.
-// Enterprise features like Gateway Mode require authentication.
+// Only ClientID is required; ClientSecret is optional for community mode.
+// Enterprise mode (with actual license validation) requires both.
 func (c *AxonFlowClient) requireCredentials(feature string) error {
-	if c.config.LicenseKey == "" && c.config.ClientSecret == "" {
-		return fmt.Errorf("%s requires credentials. Set LicenseKey or ClientID/ClientSecret", feature)
+	if c.config.ClientID == "" {
+		return fmt.Errorf("%s requires ClientID. Set ClientID (ClientSecret is optional for community mode)", feature)
 	}
 	return nil
 }
@@ -1200,14 +1176,7 @@ func (c *AxonFlowClient) GetPolicyApprovedContext(
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Gateway Mode: Pre-check for query: %s", query[:min(50, len(query))])
@@ -1353,14 +1322,7 @@ func (c *AxonFlowClient) AuditLLMCall(
 
 	httpReq.Header.Set("Content-Type", "application/json")
 
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		httpReq.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		httpReq.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(httpReq)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] Gateway Mode: Audit - ContextID: %s, Provider: %s, Model: %s",
@@ -1568,15 +1530,7 @@ func (c *AxonFlowClient) makeJSONRequest(ctx context.Context, method, fullURL st
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-
-	// Add auth headers only when credentials are provided
-	// Community/self-hosted mode works without credentials
-	if c.config.LicenseKey != "" {
-		req.Header.Set("X-License-Key", c.config.LicenseKey)
-	}
-	if c.config.ClientSecret != "" {
-		req.Header.Set("X-Client-Secret", c.config.ClientSecret)
-	}
+	c.addAuthHeaders(req)
 
 	if c.config.Debug {
 		log.Printf("[AxonFlow] JSON request: %s %s", method, fullURL)

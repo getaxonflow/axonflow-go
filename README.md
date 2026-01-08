@@ -14,7 +14,7 @@ go get github.com/getaxonflow/axonflow-go
 
 ## Quick Start
 
-### Basic Usage (License-Based Auth)
+### Basic Usage (OAuth2 Client Credentials)
 
 ```go
 package main
@@ -28,10 +28,11 @@ import (
 )
 
 func main() {
-    // Simple initialization with license key
+    // Simple initialization with OAuth2 credentials
     client := axonflow.NewClient(axonflow.AxonFlowConfig{
-        Endpoint:   "https://staging-eu.getaxonflow.com",
-        LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+        Endpoint:     "https://staging-eu.getaxonflow.com",
+        ClientID:     os.Getenv("AXONFLOW_CLIENT_ID"),
+        ClientSecret: os.Getenv("AXONFLOW_CLIENT_SECRET"),
     })
 
     // Execute a governed query
@@ -66,11 +67,12 @@ import (
 
 // Full configuration with all features
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    Endpoint:   "https://staging-eu.getaxonflow.com",
-    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
-    Mode:       "production",  // or "sandbox"
-    Debug:      true,          // Enable debug logging
-    Timeout:    60 * time.Second,
+    Endpoint:     "https://staging-eu.getaxonflow.com",
+    ClientID:     os.Getenv("AXONFLOW_CLIENT_ID"),
+    ClientSecret: os.Getenv("AXONFLOW_CLIENT_SECRET"),
+    Mode:         "production",  // or "sandbox"
+    Debug:        true,          // Enable debug logging
+    Timeout:      60 * time.Second,
 
     // Retry configuration (exponential backoff)
     Retry: axonflow.RetryConfig{
@@ -141,24 +143,11 @@ docker-compose up
 - ✅ Same API as production
 - ✅ Automatically detects localhost and skips authentication
 
-### Legacy Authentication (Deprecated)
-
-> **⚠️ Deprecated:** `ClientID` and `ClientSecret` authentication is deprecated. Please migrate to license-based authentication using `LicenseKey`.
-
-```go
-// Legacy method (still supported for backward compatibility)
-client := axonflow.NewClientSimple(
-    "https://staging-eu.getaxonflow.com",
-    "your-client-id",
-    "your-client-secret",
-)
-```
-
 ### Sandbox Mode (Testing)
 
 ```go
 // Quick sandbox client for testing
-client := axonflow.Sandbox("demo-key")
+client := axonflow.Sandbox("demo-client", "demo-secret")
 
 resp, err := client.ExecuteQuery(
     "",
@@ -251,8 +240,9 @@ import (
 
 // Initialize AxonFlow client
 axonflowClient := axonflow.NewClient(axonflow.AxonFlowConfig{
-    Endpoint:   "https://staging-eu.getaxonflow.com",
-    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+    Endpoint:     "https://staging-eu.getaxonflow.com",
+    ClientID:     os.Getenv("AXONFLOW_CLIENT_ID"),
+    ClientSecret: os.Getenv("AXONFLOW_CLIENT_SECRET"),
 })
 
 // Create an adapter for the OpenAI client
@@ -637,8 +627,9 @@ fmt.Printf("Result: %v\n", resp.Data)
    import "os"
 
    client := axonflow.NewClient(axonflow.AxonFlowConfig{
-       Endpoint:   os.Getenv("AXONFLOW_AGENT_URL"),
-       LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+       Endpoint:     os.Getenv("AXONFLOW_AGENT_URL"),
+       ClientID:     os.Getenv("AXONFLOW_CLIENT_ID"),
+       ClientSecret: os.Getenv("AXONFLOW_CLIENT_SECRET"),
    })
    ```
 
@@ -652,7 +643,7 @@ fmt.Printf("Result: %v\n", resp.Data)
 
 6. **Health Checks**: Monitor AxonFlow availability with periodic health checks
 
-7. **Secure Storage**: Store license keys in environment variables or secrets management systems (AWS Secrets Manager, HashiCorp Vault, etc.)
+7. **Secure Storage**: Store credentials in environment variables or secrets management systems (AWS Secrets Manager, HashiCorp Vault, etc.)
 
 ## Configuration Reference
 
@@ -661,9 +652,8 @@ fmt.Printf("Result: %v\n", resp.Data)
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `Endpoint` | `string` | Required | AxonFlow Agent endpoint URL |
-| `LicenseKey` | `string` | **Recommended** | License key for authentication |
-| `ClientID` | `string` | Deprecated | ⚠️ Legacy: Client ID (use LicenseKey instead) |
-| `ClientSecret` | `string` | Deprecated | ⚠️ Legacy: Client secret (use LicenseKey instead) |
+| `ClientID` | `string` | **Required** | OAuth2 client ID for authentication |
+| `ClientSecret` | `string` | **Required** | OAuth2 client secret for authentication |
 | `Mode` | `string` | `"production"` | `"production"` or `"sandbox"` |
 | `Debug` | `bool` | `false` | Enable debug logging |
 | `Timeout` | `time.Duration` | `60s` | Request timeout |
@@ -673,13 +663,23 @@ fmt.Printf("Result: %v\n", resp.Data)
 | `Cache.Enabled` | `bool` | `true` | Enable caching |
 | `Cache.TTL` | `time.Duration` | `60s` | Cache time-to-live |
 
+**Note:** For self-hosted (localhost) deployments, `ClientID` and `ClientSecret` are optional.
+
 ## Migration Guide
 
-### Migrating from ClientID/ClientSecret to License Key
+### Migrating to OAuth2 Client Credentials
 
-If you're currently using `ClientID` and `ClientSecret`, migrate to license-based authentication:
+If you're using older authentication methods (`LicenseKey` or API keys), migrate to OAuth2 client credentials:
 
-**Before:**
+**Before (v2.x):**
+```go
+client := axonflow.NewClient(axonflow.AxonFlowConfig{
+    Endpoint:   "https://staging-eu.getaxonflow.com",
+    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
+})
+```
+
+**After (v3.x):**
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
     Endpoint:     "https://staging-eu.getaxonflow.com",
@@ -688,18 +688,12 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
 })
 ```
 
-**After:**
-```go
-client := axonflow.NewClient(axonflow.AxonFlowConfig{
-    Endpoint:   "https://staging-eu.getaxonflow.com",
-    LicenseKey: os.Getenv("AXONFLOW_LICENSE_KEY"),
-})
-```
-
-**How to get a license key:**
+**How to get credentials:**
 1. Contact AxonFlow support at [dev@getaxonflow.com](mailto:dev@getaxonflow.com)
-2. License keys are provided as part of your AxonFlow subscription
-3. Store keys securely in environment variables or secrets management systems
+2. Credentials are provided as part of your AxonFlow subscription
+3. Store credentials securely in environment variables or secrets management systems
+
+**Self-hosted users:** No credentials required for localhost endpoints.
 
 ## Examples
 

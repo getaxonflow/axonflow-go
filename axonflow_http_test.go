@@ -1,6 +1,7 @@
 package axonflow
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -210,6 +211,44 @@ func TestExecuteQueryFailOpen(t *testing.T) {
 
 	if !resp.Success {
 		t.Error("Expected fail-open to return success=true")
+	}
+}
+
+func TestExecuteQueryEmptyUserTokenDefaultsToAnonymous(t *testing.T) {
+	var receivedUserToken string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/request" {
+			body, _ := io.ReadAll(r.Body)
+			var req map[string]interface{}
+			json.Unmarshal(body, &req)
+			receivedUserToken = req["user_token"].(string)
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": true,
+				"result":  "Test result",
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Cache:        CacheConfig{Enabled: false},
+	})
+
+	// Call with empty userToken
+	_, err := client.ExecuteQuery("", "test query", "chat", nil)
+	if err != nil {
+		t.Fatalf("ExecuteQuery failed: %v", err)
+	}
+
+	// Verify the server received "anonymous" as userToken
+	if receivedUserToken != "anonymous" {
+		t.Errorf("Expected userToken 'anonymous', got '%s'", receivedUserToken)
 	}
 }
 
@@ -979,7 +1018,7 @@ func TestExecutePlanFailed(t *testing.T) {
 
 func TestGetPlanStatus(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/plans/plan-123" {
+		if r.URL.Path == "/api/v1/plan/plan-123" {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"plan_id":         "plan-123",
@@ -1133,13 +1172,13 @@ func TestRetryWith4xxError(t *testing.T) {
 func TestAuthHeadersSentWithCredentials(t *testing.T) {
 	receivedAuthHeader := ""
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedAuthHeader = r.Header.Get("X-Client-Secret")
+		receivedAuthHeader = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{"success": true})
 	}))
 	defer server.Close()
 
-	// When credentials are provided, auth headers should be sent
+	// When credentials are provided, OAuth2 Basic auth header should be sent
 	client := NewClient(AxonFlowConfig{
 		Endpoint:     server.URL,
 		ClientID:     "test",
@@ -1149,9 +1188,10 @@ func TestAuthHeadersSentWithCredentials(t *testing.T) {
 
 	_, _ = client.ExecuteQuery("user", "query", "chat", nil)
 
-	// Auth header SHOULD be set when credentials are provided
-	if receivedAuthHeader != "secret" {
-		t.Errorf("Expected auth header 'secret', got '%s'", receivedAuthHeader)
+	// Auth header SHOULD be set with OAuth2 Basic auth format
+	expectedBasic := "Basic " + base64.StdEncoding.EncodeToString([]byte("test:secret"))
+	if receivedAuthHeader != expectedBasic {
+		t.Errorf("Expected OAuth2 Basic auth header '%s', got '%s'", expectedBasic, receivedAuthHeader)
 	}
 }
 

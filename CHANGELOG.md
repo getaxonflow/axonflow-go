@@ -5,6 +5,40 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-01-08
+
+### Added
+
+- **OAuth2-style client credentials**: New `ClientID` and `ClientSecret` configuration fields following OAuth2 client credentials pattern.
+  - `ClientID` is used for request identification (required for most API calls)
+  - `ClientSecret` is optional - community/self-hosted deployments work without it
+
+- **Enterprise: Close PR** (`ClosePR`): Close a PR without merging and optionally delete the branch
+  - Useful for cleaning up test/demo PRs created by code governance examples
+  - Supports all Git providers: GitHub, GitLab, Bitbucket
+  - Requires enterprise portal authentication
+
+### Changed
+
+- **Simplified authentication**: For community mode, simply provide `ClientID` for request identification. No `ClientSecret` needed.
+
+```go
+// Community mode - no secret needed
+client := axonflow.NewClient(axonflow.AxonFlowConfig{
+    Endpoint: "http://localhost:8080",
+    ClientID: "my-app",  // Used for request identification
+})
+```
+
+### Fixed
+
+- **GetPlanStatus endpoint**: Fixed endpoint path from `/api/plans/{id}` to `/api/v1/plan/{id}` to match orchestrator API
+
+### Enterprise
+
+- OAuth2 Basic auth: `Authorization: Basic base64(clientId:clientSecret)` replaces `X-License-Key` header
+- Removed `LicenseKey` configuration option (use `ClientID`/`ClientSecret`)
+
 ## [2.1.0] - 2026-01-05
 
 ### Added
