@@ -214,6 +214,44 @@ func TestExecuteQueryFailOpen(t *testing.T) {
 	}
 }
 
+func TestExecuteQueryEmptyUserTokenDefaultsToAnonymous(t *testing.T) {
+	var receivedUserToken string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/request" {
+			body, _ := io.ReadAll(r.Body)
+			var req map[string]interface{}
+			json.Unmarshal(body, &req)
+			receivedUserToken = req["user_token"].(string)
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": true,
+				"result":  "Test result",
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint:     server.URL,
+		ClientID:     "test-client",
+		ClientSecret: "test-secret",
+		Cache:        CacheConfig{Enabled: false},
+	})
+
+	// Call with empty userToken
+	_, err := client.ExecuteQuery("", "test query", "chat", nil)
+	if err != nil {
+		t.Fatalf("ExecuteQuery failed: %v", err)
+	}
+
+	// Verify the server received "anonymous" as userToken
+	if receivedUserToken != "anonymous" {
+		t.Errorf("Expected userToken 'anonymous', got '%s'", receivedUserToken)
+	}
+}
+
 func TestHealthCheck(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {

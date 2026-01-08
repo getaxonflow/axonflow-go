@@ -400,8 +400,14 @@ func Sandbox(apiKey string) *AxonFlowClient {
 	})
 }
 
-// ExecuteQuery sends a query through AxonFlow platform with policy enforcement
+// ExecuteQuery sends a query through AxonFlow platform with policy enforcement.
+// If userToken is empty, it defaults to "anonymous" for audit purposes.
 func (c *AxonFlowClient) ExecuteQuery(userToken, query, requestType string, context map[string]interface{}) (*ClientResponse, error) {
+	// Default to "anonymous" if userToken is empty (community mode)
+	if userToken == "" {
+		userToken = "anonymous"
+	}
+
 	// Generate cache key
 	cacheKey := fmt.Sprintf("%s:%s:%s", requestType, query, userToken)
 
