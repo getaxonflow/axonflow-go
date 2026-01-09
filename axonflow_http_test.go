@@ -1,6 +1,7 @@
 package axonflow
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -1292,5 +1293,171 @@ func TestUninstallConnectorNotFound(t *testing.T) {
 	err := client.UninstallConnector("nonexistent")
 	if err == nil {
 		t.Error("Expected error for nonexistent connector")
+	}
+}
+
+// ============================================================================
+// MCP Query/Execute Tests (Policy Enforcement)
+// ============================================================================
+
+func TestMCPQuery(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/mcp/resources/query" && r.Method == "POST" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":  true,
+				"data":     []map[string]interface{}{{"id": 1, "name": "Test"}},
+				"redacted": false,
+				"policy_info": map[string]interface{}{
+					"policies_evaluated": 5,
+					"blocked":            false,
+					"redactions_applied": 0,
+					"processing_time_ms": 2,
+				},
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
+	})
+
+	ctx := context.Background()
+	resp, err := client.MCPQuery(ctx, MCPQueryRequest{
+		Connector: "postgres",
+		Statement: "SELECT * FROM users",
+	})
+	if err != nil {
+		t.Fatalf("MCPQuery failed: %v", err)
+	}
+
+	if !resp.Success {
+		t.Error("Expected success response")
+	}
+
+	if resp.PolicyInfo == nil {
+		t.Error("Expected PolicyInfo in response")
+	} else if resp.PolicyInfo.PoliciesEvaluated != 5 {
+		t.Errorf("Expected 5 policies evaluated, got %d", resp.PolicyInfo.PoliciesEvaluated)
+	}
+}
+
+func TestMCPQueryWithRedaction(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/mcp/resources/query" && r.Method == "POST" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":         true,
+				"data":            []map[string]interface{}{{"id": 1, "ssn": "***REDACTED***"}},
+				"redacted":        true,
+				"redacted_fields": []string{"data[0].ssn"},
+				"policy_info": map[string]interface{}{
+					"policies_evaluated": 5,
+					"blocked":            false,
+					"redactions_applied": 1,
+					"processing_time_ms": 3,
+				},
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
+	})
+
+	ctx := context.Background()
+	resp, err := client.MCPQuery(ctx, MCPQueryRequest{
+		Connector: "postgres",
+		Statement: "SELECT * FROM customers",
+	})
+	if err != nil {
+		t.Fatalf("MCPQuery failed: %v", err)
+	}
+
+	if !resp.Redacted {
+		t.Error("Expected redacted response")
+	}
+
+	if len(resp.RedactedFields) == 0 {
+		t.Error("Expected redacted fields")
+	}
+
+	if resp.PolicyInfo == nil || resp.PolicyInfo.RedactionsApplied != 1 {
+		t.Error("Expected 1 redaction applied")
+	}
+}
+
+func TestMCPQueryBlocked(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/mcp/resources/query" && r.Method == "POST" {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"error": "Request blocked: SQLi detected",
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
+	})
+
+	ctx := context.Background()
+	_, err := client.MCPQuery(ctx, MCPQueryRequest{
+		Connector: "postgres",
+		Statement: "SELECT * FROM users; DROP TABLE users;--",
+	})
+
+	if err == nil {
+		t.Error("Expected error for blocked query")
+	}
+}
+
+func TestMCPExecute(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/mcp/tools/execute" && r.Method == "POST" {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":       true,
+				"rows_affected": 1,
+				"policy_info": map[string]interface{}{
+					"policies_evaluated": 3,
+					"blocked":            false,
+					"redactions_applied": 0,
+					"processing_time_ms": 1,
+				},
+			})
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient(AxonFlowConfig{
+		Endpoint: server.URL,
+		ClientID: "test",
+		Cache:    CacheConfig{Enabled: false},
+	})
+
+	ctx := context.Background()
+	resp, err := client.MCPExecute(ctx, MCPExecuteRequest{
+		Connector: "postgres",
+		Action:    "update",
+		Params: map[string]interface{}{
+			"query": "UPDATE users SET name = $1 WHERE id = $2",
+		},
+	})
+	if err != nil {
+		t.Fatalf("MCPExecute failed: %v", err)
+	}
+
+	if resp.RowsAffected != 1 {
+		t.Errorf("Expected 1 affected row, got %d", resp.RowsAffected)
 	}
 }

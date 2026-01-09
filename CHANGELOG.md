@@ -5,6 +5,21 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-01-09
+
+### Added
+
+- **MCP Policy Enforcement Response Fields**: `MCPQuery()` and `MCPExecute()` now return policy enforcement metadata
+  - `Redacted bool` - Whether any fields were redacted by PII policies
+  - `RedactedFields []string` - JSON paths of redacted fields (e.g., `rows[0].ssn`)
+  - `PolicyInfo *PolicyInfo` - Full policy evaluation metadata
+
+- **PolicyInfo types**: New types for policy enforcement metadata
+  - `PolicyInfo` - Contains `PoliciesEvaluated`, `Blocked`, `BlockReason`, `RedactionsApplied`, `ProcessingTimeMs`, `MatchedPolicies`
+  - `PolicyMatchInfo` - Details of matched policies including `PolicyID`, `PolicyName`, `Category`, `Severity`, `Action`
+
+---
+
 ## [2.2.0] - 2026-01-08
 
 ### Added
