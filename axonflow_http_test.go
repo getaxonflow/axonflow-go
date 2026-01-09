@@ -1324,7 +1324,7 @@ func TestMCPQuery(t *testing.T) {
 		Cache:    CacheConfig{Enabled: false},
 	})
 
-	ctx := t.Context()
+	ctx := context.Background()
 	resp, err := client.MCPQuery(ctx, MCPQueryRequest{
 		Connector: "postgres",
 		Statement: "SELECT * FROM users",
@@ -1370,7 +1370,7 @@ func TestMCPQueryWithRedaction(t *testing.T) {
 		Cache:    CacheConfig{Enabled: false},
 	})
 
-	ctx := t.Context()
+	ctx := context.Background()
 	resp, err := client.MCPQuery(ctx, MCPQueryRequest{
 		Connector: "postgres",
 		Statement: "SELECT * FROM customers",
@@ -1409,7 +1409,7 @@ func TestMCPQueryBlocked(t *testing.T) {
 		Cache:    CacheConfig{Enabled: false},
 	})
 
-	ctx := t.Context()
+	ctx := context.Background()
 	_, err := client.MCPQuery(ctx, MCPQueryRequest{
 		Connector: "postgres",
 		Statement: "SELECT * FROM users; DROP TABLE users;--",
@@ -1444,7 +1444,7 @@ func TestMCPExecute(t *testing.T) {
 		Cache:    CacheConfig{Enabled: false},
 	})
 
-	ctx := t.Context()
+	ctx := context.Background()
 	resp, err := client.MCPExecute(ctx, MCPExecuteRequest{
 		Connector: "postgres",
 		Statement: "UPDATE users SET name = $1 WHERE id = $2",
