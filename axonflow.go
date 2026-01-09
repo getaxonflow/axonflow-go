@@ -178,10 +178,11 @@ type PolicyInfo struct {
 
 // PolicyMatchInfo contains details about a matched policy.
 type PolicyMatchInfo struct {
-	PolicyID string `json:"policy_id"`
-	Category string `json:"category"`
-	Severity string `json:"severity"`
-	Action   string `json:"action"`
+	PolicyID   string `json:"policy_id"`
+	PolicyName string `json:"policy_name"`
+	Category   string `json:"category"`
+	Severity   string `json:"severity"`
+	Action     string `json:"action"`
 }
 
 // PlanResponse represents a multi-agent plan generation response
@@ -879,6 +880,76 @@ func (c *AxonFlowClient) QueryConnector(userToken, connectorName, query string, 
 	}
 
 	return connResp, nil
+}
+
+// MCPQueryRequest represents a request to query an MCP connector directly.
+type MCPQueryRequest struct {
+	Connector string                 `json:"connector"`
+	Statement string                 `json:"statement"`
+	Options   map[string]interface{} `json:"options,omitempty"`
+}
+
+// MCPQuery executes a query directly against the MCP connector endpoint.
+// This method calls the agent's /mcp/resources/query endpoint which provides:
+// - Request-phase policy evaluation (SQLi blocking, PII blocking)
+// - Response-phase policy evaluation (PII redaction)
+// - PolicyInfo metadata in responses
+//
+// Returns ConnectorResponse with PolicyInfo, Redacted, and RedactedFields populated.
+func (c *AxonFlowClient) MCPQuery(ctx context.Context, req MCPQueryRequest) (*ConnectorResponse, error) {
+	if req.Connector == "" {
+		return nil, fmt.Errorf("connector name is required")
+	}
+	if req.Statement == "" {
+		return nil, fmt.Errorf("statement is required")
+	}
+
+	url := c.config.Endpoint + "/mcp/resources/query"
+
+	var result ConnectorResponse
+	if err := c.makeJSONRequest(ctx, "POST", url, req, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
+// MCPExecuteRequest represents a request to execute a command via an MCP connector.
+type MCPExecuteRequest struct {
+	Connector string                 `json:"connector"`
+	Action    string                 `json:"action"`
+	Params    map[string]interface{} `json:"params,omitempty"`
+	Options   map[string]interface{} `json:"options,omitempty"`
+}
+
+// MCPExecuteResponse represents the response from an MCP execute command.
+type MCPExecuteResponse struct {
+	Success      bool                   `json:"success"`
+	Result       interface{}            `json:"result,omitempty"`
+	Error        string                 `json:"error,omitempty"`
+	RowsAffected int                    `json:"rows_affected,omitempty"`
+	Meta         map[string]interface{} `json:"meta,omitempty"`
+	PolicyInfo   *PolicyInfo            `json:"policy_info,omitempty"`
+}
+
+// MCPExecute executes a command (write operation) via an MCP connector.
+// This method calls the agent's /mcp/tools/execute endpoint.
+func (c *AxonFlowClient) MCPExecute(ctx context.Context, req MCPExecuteRequest) (*MCPExecuteResponse, error) {
+	if req.Connector == "" {
+		return nil, fmt.Errorf("connector name is required")
+	}
+	if req.Action == "" {
+		return nil, fmt.Errorf("action is required")
+	}
+
+	url := c.config.Endpoint + "/mcp/tools/execute"
+
+	var result MCPExecuteResponse
+	if err := c.makeJSONRequest(ctx, "POST", url, req, &result); err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }
 
 // GeneratePlan creates a multi-agent execution plan from a natural language query.
