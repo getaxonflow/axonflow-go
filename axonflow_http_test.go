@@ -1423,7 +1423,7 @@ func TestMCPQueryBlocked(t *testing.T) {
 
 func TestMCPExecute(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/mcp/resources/execute" && r.Method == "POST" {
+		if r.URL.Path == "/mcp/tools/execute" && r.Method == "POST" {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"success":       true,
