@@ -168,11 +168,11 @@ type ConnectorResponse struct {
 // PolicyInfo contains information about policy evaluation results.
 // This is returned with MCP connector responses when policies are evaluated.
 type PolicyInfo struct {
-	PoliciesEvaluated int              `json:"policies_evaluated"`
-	Blocked           bool             `json:"blocked"`
-	BlockReason       string           `json:"block_reason,omitempty"`
-	RedactionsApplied int              `json:"redactions_applied"`
-	ProcessingTimeMs  int64            `json:"processing_time_ms"`
+	PoliciesEvaluated int               `json:"policies_evaluated"`
+	Blocked           bool              `json:"blocked"`
+	BlockReason       string            `json:"block_reason,omitempty"`
+	RedactionsApplied int               `json:"redactions_applied"`
+	ProcessingTimeMs  int64             `json:"processing_time_ms"`
 	MatchedPolicies   []PolicyMatchInfo `json:"matched_policies,omitempty"`
 }
 
