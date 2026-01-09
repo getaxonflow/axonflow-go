@@ -159,6 +159,29 @@ type ConnectorResponse struct {
 	Data    interface{}            `json:"data"`
 	Error   string                 `json:"error,omitempty"`
 	Meta    map[string]interface{} `json:"meta,omitempty"`
+	// PolicyInfo fields for MCP tiered policy enforcement (Issues #963, #975)
+	Redacted       bool        `json:"redacted,omitempty"`
+	RedactedFields []string    `json:"redacted_fields,omitempty"`
+	PolicyInfo     *PolicyInfo `json:"policy_info,omitempty"`
+}
+
+// PolicyInfo contains information about policy evaluation results.
+// This is returned with MCP connector responses when policies are evaluated.
+type PolicyInfo struct {
+	PoliciesEvaluated int              `json:"policies_evaluated"`
+	Blocked           bool             `json:"blocked"`
+	BlockReason       string           `json:"block_reason,omitempty"`
+	RedactionsApplied int              `json:"redactions_applied"`
+	ProcessingTimeMs  int64            `json:"processing_time_ms"`
+	MatchedPolicies   []PolicyMatchInfo `json:"matched_policies,omitempty"`
+}
+
+// PolicyMatchInfo contains details about a matched policy.
+type PolicyMatchInfo struct {
+	PolicyID string `json:"policy_id"`
+	Category string `json:"category"`
+	Severity string `json:"severity"`
+	Action   string `json:"action"`
 }
 
 // PlanResponse represents a multi-agent plan generation response
