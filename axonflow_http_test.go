@@ -1427,7 +1427,7 @@ func TestMCPExecute(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"success":       true,
-				"affected_rows": 1,
+				"rows_affected": 1,
 				"policy_info": map[string]interface{}{
 					"policies_evaluated": 3,
 					"blocked":            false,
@@ -1448,13 +1448,16 @@ func TestMCPExecute(t *testing.T) {
 	ctx := context.Background()
 	resp, err := client.MCPExecute(ctx, MCPExecuteRequest{
 		Connector: "postgres",
-		Statement: "UPDATE users SET name = $1 WHERE id = $2",
+		Action:    "update",
+		Params: map[string]interface{}{
+			"query": "UPDATE users SET name = $1 WHERE id = $2",
+		},
 	})
 	if err != nil {
 		t.Fatalf("MCPExecute failed: %v", err)
 	}
 
-	if resp.AffectedRows != 1 {
-		t.Errorf("Expected 1 affected row, got %d", resp.AffectedRows)
+	if resp.RowsAffected != 1 {
+		t.Errorf("Expected 1 affected row, got %d", resp.RowsAffected)
 	}
 }
