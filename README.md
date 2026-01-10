@@ -576,7 +576,7 @@ if err != nil {
 
 ## VPC Private Endpoint (Low-Latency)
 
-For applications running in AWS VPC, use the private endpoint for sub-10ms latency:
+For applications running in AWS VPC, use the private endpoint for lowest latency:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
@@ -586,12 +586,12 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
     Mode:         "production",
 })
 
-// Enjoy sub-10ms P99 latency vs ~100ms over public internet
+// VPC deployment provides lowest latency due to intra-VPC routing
 ```
 
-**Performance:**
-- Public endpoint: ~100ms (internet routing)
-- VPC private endpoint: <10ms P99 (intra-VPC routing)
+**Network Latency Characteristics:**
+- Public endpoint: Higher latency (internet routing overhead)
+- VPC private endpoint: Lower latency (intra-VPC routing)
 
 ## Error Handling
 
