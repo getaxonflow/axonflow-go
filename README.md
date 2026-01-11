@@ -768,3 +768,5 @@ For enterprise features, contact [sales@getaxonflow.com](mailto:sales@getaxonflo
 ## License
 
 MIT
+
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=a0991f10-8c2a-4462-bb97-7d234b6f28f0" />
