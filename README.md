@@ -1,7 +1,7 @@
 # AxonFlow SDK for Go
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/getaxonflow/axonflow-go.svg)](https://pkg.go.dev/github.com/getaxonflow/axonflow-go)
-[![Go Report Card](https://goreportcard.com/badge/github.com/getaxonflow/axonflow-go)](https://goreportcard.com/report/github.com/getaxonflow/axonflow-go)
+[![Go Reference](https://pkg.go.dev/badge/github.com/getaxonflow/axonflow-sdk-go/v2.svg)](https://pkg.go.dev/github.com/getaxonflow/axonflow-sdk-go/v2)
+[![Go Report Card](https://goreportcard.com/badge/github.com/getaxonflow/axonflow-sdk-go)](https://goreportcard.com/report/github.com/getaxonflow/axonflow-sdk-go)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Enterprise-grade Go SDK for AxonFlow AI governance platform. Add invisible AI governance to your applications with production-ready features including retry logic, caching, fail-open strategy, and debug mode.
@@ -9,7 +9,7 @@ Enterprise-grade Go SDK for AxonFlow AI governance platform. Add invisible AI go
 ## Installation
 
 ```bash
-go get github.com/getaxonflow/axonflow-go
+go get github.com/getaxonflow/axonflow-sdk-go/v2
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ import (
     "log"
     "os"
 
-    "github.com/getaxonflow/axonflow-go"
+    "github.com/getaxonflow/axonflow-sdk-go/v2"
 )
 
 func main() {
@@ -62,7 +62,7 @@ func main() {
 import (
     "time"
     "os"
-    "github.com/getaxonflow/axonflow-go"
+    "github.com/getaxonflow/axonflow-sdk-go/v2"
 )
 
 // Full configuration with all features
@@ -100,7 +100,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/getaxonflow/axonflow-go"
+    "github.com/getaxonflow/axonflow-sdk-go/v2"
 )
 
 func main() {
@@ -576,7 +576,7 @@ if err != nil {
 
 ## VPC Private Endpoint (Low-Latency)
 
-For applications running in AWS VPC, use the private endpoint for lowest latency:
+For applications running in AWS VPC, use the private endpoint for lower latency:
 
 ```go
 client := axonflow.NewClient(axonflow.AxonFlowConfig{
@@ -585,8 +585,6 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
     ClientSecret: "your-secret",
     Mode:         "production",
 })
-
-// VPC deployment provides lowest latency due to intra-VPC routing
 ```
 
 **Network Latency Characteristics:**
@@ -697,17 +695,74 @@ client := axonflow.NewClient(axonflow.AxonFlowConfig{
 
 ## Examples
 
-See the [examples](examples/) directory for complete working examples:
+Complete working examples for all features are available in the [examples folder](https://github.com/getaxonflow/axonflow/tree/main/examples).
 
-- [Basic Usage](examples/basic/main.go)
-- [MCP Connectors](examples/connectors/main.go)
-- [Multi-Agent Planning](examples/planning/main.go)
+### Community Features
+
+```go
+// PII Detection - Automatically detect sensitive data
+result, _ := client.GetPolicyApprovedContext("user", "SSN: 123-45-6789", nil, nil)
+// result.RequiresRedaction = true (SSN detected)
+
+// SQL Injection Detection - Block malicious queries
+result, _ := client.GetPolicyApprovedContext("user", "SELECT * FROM users; DROP TABLE users;", nil, nil)
+// result.Approved = false, result.BlockReason = "SQL injection detected"
+
+// Static Policies - List and manage built-in policies
+policies, _ := client.ListPolicies()
+// Returns: [{Name: "pii-detection", Enabled: true}, {Name: "sql-injection", Enabled: true}, ...]
+
+// Dynamic Policies - Create runtime policies
+err := client.CreateDynamicPolicy(axonflow.DynamicPolicyRequest{
+    Name:       "block-competitor-queries",
+    Conditions: `{"contains": ["competitor", "pricing"]}`,
+    Action:     "block",
+})
+
+// MCP Connectors - Query external data sources
+resp, _ := client.QueryConnector("user-token", "postgres-db", "SELECT name, email FROM customers", nil)
+// resp.Data contains query results with PII automatically redacted
+
+// Multi-Agent Planning - Orchestrate complex workflows
+plan, _ := client.GeneratePlan("Research AI governance regulations and summarize", "legal")
+result, _ := client.ExecutePlan(plan.PlanID)
+
+// Audit Logging - Track all LLM interactions
+logs, _ := client.ListAuditLogs(axonflow.AuditLogFilter{UserID: "user-123", Limit: 100})
+
+// Execution Replay - Debug past executions
+executions, _ := client.ListExecutions(axonflow.ExecutionFilter{Status: "failed"})
+```
+
+### Enterprise Features
+
+These features require an AxonFlow Enterprise license:
+
+```go
+// Code Governance - Automated PR reviews with AI
+prResult, _ := client.ReviewPullRequest(axonflow.PRReviewRequest{
+    RepoOwner:  "your-org",
+    RepoName:   "your-repo",
+    PRNumber:   123,
+    CheckTypes: []string{"security", "style", "performance"},
+})
+
+// Cost Controls - Budget management for LLM usage
+budget, _ := client.GetBudget("team-engineering")
+// Returns: {Limit: 1000.00, Used: 234.56, Remaining: 765.44}
+
+// MCP Policy Enforcement - Automatic PII redaction in connector responses
+resp, _ := client.QueryConnector("user", "postgres", "SELECT * FROM customers", nil)
+// resp.PolicyInfo.Redacted = true
+// resp.PolicyInfo.RedactedFields = ["ssn", "credit_card"]
+```
+
+For enterprise features, contact [sales@getaxonflow.com](mailto:sales@getaxonflow.com).
 
 ## Support
 
 - **Documentation**: https://docs.getaxonflow.com
-- **npm SDK**: https://www.npmjs.com/package/@axonflow/sdk
-- **Issues**: https://github.com/getaxonflow/axonflow-go/issues
+- **Issues**: https://github.com/getaxonflow/axonflow-sdk-go/issues
 - **Email**: dev@getaxonflow.com
 
 ## License
