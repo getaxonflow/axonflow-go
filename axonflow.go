@@ -174,6 +174,10 @@ type PolicyInfo struct {
 	RedactionsApplied int               `json:"redactions_applied"`
 	ProcessingTimeMs  int64             `json:"processing_time_ms"`
 	MatchedPolicies   []PolicyMatchInfo `json:"matched_policies,omitempty"`
+	// ExfiltrationCheck contains row/volume limit information (Issue #966)
+	ExfiltrationCheck *ExfiltrationCheckInfo `json:"exfiltration_check,omitempty"`
+	// DynamicPolicyInfo contains Orchestrator dynamic policy evaluation results (Issue #968)
+	DynamicPolicyInfo *DynamicPolicyInfo `json:"dynamic_policy_info,omitempty"`
 }
 
 // PolicyMatchInfo contains details about a matched policy.
@@ -183,6 +187,49 @@ type PolicyMatchInfo struct {
 	Category   string `json:"category"`
 	Severity   string `json:"severity"`
 	Action     string `json:"action"`
+}
+
+// ExfiltrationCheckInfo contains information about exfiltration limit checks (Issue #966).
+// This helps prevent large-scale data extraction via MCP queries.
+type ExfiltrationCheckInfo struct {
+	// RowsReturned is the number of rows in the response
+	RowsReturned int64 `json:"rows_returned"`
+	// RowLimit is the configured maximum rows per query
+	RowLimit int `json:"row_limit"`
+	// BytesReturned is the size of the response data in bytes
+	BytesReturned int64 `json:"bytes_returned"`
+	// ByteLimit is the configured maximum bytes per response
+	ByteLimit int64 `json:"byte_limit"`
+	// WithinLimits indicates whether the response is within configured limits
+	WithinLimits bool `json:"within_limits"`
+}
+
+// DynamicPolicyInfo contains information about dynamic policy evaluation (Issue #968).
+// Dynamic policies are evaluated by the Orchestrator and can include rate limiting,
+// budget controls, time-based access, and role-based access policies.
+type DynamicPolicyInfo struct {
+	// PoliciesEvaluated is the number of dynamic policies checked
+	PoliciesEvaluated int `json:"policies_evaluated"`
+	// MatchedPolicies contains details about policies that matched
+	MatchedPolicies []DynamicPolicyMatch `json:"matched_policies,omitempty"`
+	// OrchestratorReachable indicates if the Orchestrator was reachable
+	OrchestratorReachable bool `json:"orchestrator_reachable"`
+	// ProcessingTimeMs is the time taken for dynamic policy evaluation
+	ProcessingTimeMs int64 `json:"processing_time_ms"`
+}
+
+// DynamicPolicyMatch contains details about a matched dynamic policy.
+type DynamicPolicyMatch struct {
+	// PolicyID is the unique identifier of the policy
+	PolicyID string `json:"policy_id"`
+	// PolicyName is the human-readable name of the policy
+	PolicyName string `json:"policy_name"`
+	// PolicyType is the type of policy (rate-limit, budget, time-access, role-access, mcp, connector)
+	PolicyType string `json:"policy_type"`
+	// Action is the action taken (allow, block, log, etc.)
+	Action string `json:"action"`
+	// Reason provides context for the policy match
+	Reason string `json:"reason,omitempty"`
 }
 
 // PlanResponse represents a multi-agent plan generation response

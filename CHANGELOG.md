@@ -5,6 +5,23 @@ All notable changes to the AxonFlow Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-01-14
+
+### Added
+
+- **MCP Exfiltration Detection** (Issue #966): `PolicyInfo` now includes `ExfiltrationCheck` with row/volume limit information
+  - `ExfiltrationCheckInfo` type with `RowsReturned`, `RowLimit`, `BytesReturned`, `ByteLimit`, `WithinLimits` fields
+  - Prevents large-scale data extraction via MCP queries
+  - Configurable via `MCP_MAX_ROWS_PER_QUERY` and `MCP_MAX_BYTES_PER_QUERY` environment variables
+
+- **MCP Dynamic Policies** (Issue #968): `PolicyInfo` now includes `DynamicPolicyInfo` for Orchestrator-evaluated policies
+  - `DynamicPolicyInfo` type with `PoliciesEvaluated`, `MatchedPolicies`, `OrchestratorReachable`, `ProcessingTimeMs`
+  - `DynamicPolicyMatch` type with `PolicyID`, `PolicyName`, `PolicyType`, `Action`, `Reason`
+  - Supports rate limiting, budget controls, time-based access, and role-based access policies
+  - Optional feature - enable via `MCP_DYNAMIC_POLICIES_ENABLED=true`
+
+---
+
 ## [2.3.0] - 2026-01-09
 
 ### Added
