@@ -503,6 +503,54 @@ fmt.Printf("Message sent: %v\n", resp.Success)
 
 For complete connector documentation, see [https://docs.getaxonflow.com/mcp](https://docs.getaxonflow.com/mcp)
 
+## MCP Policy Features (v3.2.0)
+
+### Exfiltration Detection
+
+Prevent large-scale data extraction with automatic row and byte limits:
+
+```go
+// Query with exfiltration limits (default: 10K rows, 10MB)
+response, err := client.QueryConnector("postgres", "SELECT * FROM customers", nil)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Check exfiltration info
+if response.PolicyInfo.ExfiltrationCheck.Exceeded {
+    log.Printf("Data limit exceeded: %s", response.PolicyInfo.ExfiltrationCheck.LimitType)
+    // LimitType: "rows" or "bytes"
+}
+
+// Configure limits via environment:
+// MCP_MAX_ROWS_PER_QUERY=1000
+// MCP_MAX_BYTES_PER_QUERY=5242880
+```
+
+### Dynamic Policy Evaluation
+
+Enable Orchestrator-based policy evaluation for rate limiting, budget controls, and more:
+
+```go
+// Response includes dynamic policy info when enabled
+response, err := client.QueryConnector("postgres", "SELECT id FROM users", nil)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Check dynamic policy evaluation results
+dynamicInfo := response.PolicyInfo.DynamicPolicyInfo
+if dynamicInfo.OrchestratorReachable {
+    log.Printf("Policies evaluated: %d", dynamicInfo.PoliciesEvaluated)
+    for _, policy := range dynamicInfo.MatchedPolicies {
+        log.Printf("  %s: %s", policy.PolicyName, policy.Action)
+    }
+}
+
+// Enable via environment:
+// MCP_DYNAMIC_POLICIES_ENABLED=true
+```
+
 ## Multi-Agent Planning (MAP)
 
 Generate and execute complex multi-step plans using AI agent orchestration:
